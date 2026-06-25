@@ -225,8 +225,10 @@ window.addEventListener('message', (event) => {
 });
 
 window.addEventListener('click', (event) => {
-  const target = event.target as HTMLElement | null;
-  if (target && (target.textContent?.includes('Submit') || target.closest('[data-e2e-locator="console-submit-button"]'))) {
+  const el = event.target as HTMLElement | null;
+  if (!el) return;
+  const btn = el.closest('button, [role="button"]');
+  if (btn && (btn.textContent?.trim() === 'Submit' || btn.getAttribute('data-e2e-locator') === 'console-submit-button')) {
     lastSubmitClickTime = Date.now();
   }
 });

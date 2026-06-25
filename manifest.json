@@ -23,8 +23,15 @@
   },
   "content_scripts": [
     {
+      "matches": ["https://leetcode.com/problems/*", "https://leetcode.com/submissions/*"],
+      "js": ["src/content/injected.ts"],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
       "matches": ["https://leetcode.com/problems/*"],
       "js": ["src/content/index.ts"],
+      "css": ["src/content/toast.css"],
       "run_at": "document_idle"
     }
   ],

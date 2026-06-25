@@ -1,0 +1,54 @@
+:root {
+  --pill-height: 48px;
+  --icon-size: 24px;
+}
+
+@keyframes gitleet-popup-sequence {
+  0% {
+    opacity: 0;
+    width: 48px;
+    transform: scale(0.5);
+  }
+  8% {
+    opacity: 1;
+    width: 48px;
+    transform: scale(1);
+  }
+  15%, 85% {
+    width: 160px;
+    opacity: 1;
+    transform: scale(1);
+  }
+  92% {
+    width: 48px;
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    width: 48px;
+    transform: scale(0.5);
+  }
+}
+
+@keyframes gitleet-text-fade {
+  0%, 12% {
+    opacity: 0;
+  }
+  18%, 82% {
+    opacity: 1;
+  }
+  88%, 100% {
+    opacity: 0;
+  }
+}
+
+#gitleet-toast-container {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999999;
+  pointer-events: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
