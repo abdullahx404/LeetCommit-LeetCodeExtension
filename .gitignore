@@ -1,0 +1,25 @@
+# Planning & Guidelines (Do NOT commit)
+/guidelines/
+/Guidelines/
+
+# Node & Build artifacts
+node_modules/
+dist/
+build/
+*.log
+npm-debug.log*
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# AI Agent internal directories
+.gemini/
+.agents/
