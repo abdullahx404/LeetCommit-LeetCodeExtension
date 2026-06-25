@@ -205,26 +205,36 @@ function triggerSync(meta: SubmissionMetadata): void {
   console.warn('Syncing accepted LeetCode submission to GitHub:', meta.problemTitle);
   ToastManager.showUploading(meta.problemTitle);
 
-  chrome.runtime.sendMessage({
-    type: 'SUBMISSION_ACCEPTED',
-    payload: meta,
-  }).catch(() => {
-    ToastManager.showError('Extension background worker disconnected.');
-  });
+  try {
+    if (!chrome?.runtime?.id) {
+      throw new Error('Extension context invalidated');
+    }
+    chrome.runtime.sendMessage({
+      type: 'SUBMISSION_ACCEPTED',
+      payload: meta,
+    }).catch(() => {
+      ToastManager.showError('Extension updated. Please refresh page (Ctrl+R).');
+    });
+  } catch (err) {
+    console.warn('GitLeet context invalidated. Page refresh required:', err);
+    ToastManager.showError('Extension updated! Refresh page (Ctrl+R) to sync.');
+  }
 }
 
-chrome.runtime.onMessage.addListener((message: unknown) => {
-  if (message && typeof message === 'object' && 'type' in message) {
-    const msg = message as { type: string; payload?: { status?: string; title?: string; error?: string } };
-    if (msg.type === 'GITLEET_SYNC_STATUS' && msg.payload) {
-      if (msg.payload.status === 'SUCCESS') {
-        ToastManager.showSuccess(msg.payload.title || 'Solution');
-      } else if (msg.payload.status === 'ERROR') {
-        ToastManager.showError(msg.payload.error || 'Upload failed');
+if (chrome?.runtime?.id) {
+  chrome.runtime.onMessage.addListener((message: unknown) => {
+    if (message && typeof message === 'object' && 'type' in message) {
+      const msg = message as { type: string; payload?: { status?: string; title?: string; error?: string } };
+      if (msg.type === 'GITLEET_SYNC_STATUS' && msg.payload) {
+        if (msg.payload.status === 'SUCCESS') {
+          ToastManager.showSuccess(msg.payload.title || 'Solution');
+        } else if (msg.payload.status === 'ERROR') {
+          ToastManager.showError(msg.payload.error || 'Upload failed');
+        }
       }
     }
-  }
-});
+  });
+}
 
 window.addEventListener('message', (event) => {
   if (event.source !== window || !event.data || typeof event.data !== 'object') return;
