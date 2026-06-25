@@ -5,11 +5,13 @@ import { ToastManager } from './toast';
 
 let lastSyncedTimestamp = 0;
 let lastSyncedHash = '';
+let lastSubmitClickTime = 0;
+const sessionSyncedProblems = new Set<string>();
 
 /**
- * Extracts submitted code from LeetCode Monaco editor or page DOM elements.
+ * Extracts submitted code from LeetCode Monaco editor view lines or models.
  */
-function extractSourceCode(): string {
+function extractEditorCode(): string {
   try {
     const win = window as unknown as { monaco?: { editor?: { getModels?: () => Array<{ getValue: () => string }> } } };
     if (win.monaco?.editor?.getModels) {
@@ -23,12 +25,18 @@ function extractSourceCode(): string {
     // Ignore Monaco extraction failure
   }
 
-  const codeBlocks = document.querySelectorAll('pre, code, .monaco-editor');
+  // Modern LeetCode Monaco editor DOM view lines
+  const viewLines = document.querySelectorAll('.view-lines .view-line');
+  if (viewLines.length > 0) {
+    return Array.from(viewLines).map((line) => line.textContent || '').join('\n');
+  }
+
+  const codeBlocks = document.querySelectorAll('.monaco-editor, code');
   for (let i = 0; i < codeBlocks.length; i++) {
     const block = codeBlocks[i];
     if (block) {
       const text = block.textContent;
-      if (text && text.length > 20) return text;
+      if (text && text.length > 20 && !text.startsWith('Input:')) return text;
     }
   }
 
@@ -36,7 +44,23 @@ function extractSourceCode(): string {
 }
 
 /**
- * Detects programming language directly from Monaco model language ID or DOM buttons.
+ * Extracts problem description summary for file header comments.
+ */
+function extractProblemDescription(): string {
+  const metaDesc = document.querySelector('meta[name="description"]');
+  if (metaDesc) {
+    const content = metaDesc.getAttribute('content');
+    if (content) return content;
+  }
+  const descContainer = document.querySelector('div[data-track-load="description_content"]');
+  if (descContainer && descContainer.textContent) {
+    return descContainer.textContent.trim().slice(0, 400);
+  }
+  return '';
+}
+
+/**
+ * Detects programming language strictly validated against known languages.
  */
 function detectLanguage(partialLang?: string): string {
   if (partialLang) {
@@ -65,15 +89,19 @@ function detectLanguage(partialLang?: string): string {
     // Ignore Monaco extraction failure
   }
 
-  const langBtn = document.querySelector('[data-cy="lang-select"], [class*="lang-select"], button[id*="headlessui-listbox-button"], .text-label-2');
-  if (langBtn && langBtn.textContent) {
-    const txt = langBtn.textContent.trim();
-    if (txt.toLowerCase().includes('c++')) return 'C++';
-    if (txt.toLowerCase().includes('python')) return 'python3';
-    return txt;
+  const validLangs = ['c++', 'python', 'python3', 'java', 'typescript', 'javascript', 'go', 'rust', 'c#', 'c', 'kotlin', 'swift', 'ruby', 'scala', 'php', 'dart'];
+  const langEls = document.querySelectorAll('[data-cy="lang-select"], [class*="lang-select"], button');
+  for (let i = 0; i < langEls.length; i++) {
+    const txt = (langEls[i]?.textContent || '').trim();
+    const lower = txt.toLowerCase();
+    if (validLangs.includes(lower)) {
+      if (lower === 'c++') return 'C++';
+      if (lower === 'python' || lower === 'python3') return 'python3';
+      return txt;
+    }
   }
 
-  return 'python3';
+  return 'C++';
 }
 
 /**
@@ -109,8 +137,16 @@ function extractPageMetadata(partialCode?: string, partialLang?: string): Submis
   }
 
   const language = detectLanguage(partialLang);
-  const code = partialCode || extractSourceCode();
+  const rawCode = partialCode || extractEditorCode();
   const extension = getFileExtension(language);
+  const desc = extractProblemDescription();
+
+  let code = rawCode;
+  if (desc && !rawCode.includes('Problem:')) {
+    const prefix = (language === 'python3' || language === 'Python' || language === 'Ruby') ? '#' : '//';
+    const cleanDesc = desc.replace(/\r?\n+/g, ' ').slice(0, 300);
+    code = `${prefix} Problem: ${title}\n${prefix} Description: ${cleanDesc}...\n\n${rawCode}`;
+  }
 
   // Extract runtime and space complexity metrics
   let runtime = '0 ms';
@@ -142,12 +178,17 @@ function extractPageMetadata(partialCode?: string, partialLang?: string): Submis
 function triggerSync(meta: SubmissionMetadata): void {
   const now = Date.now();
   const codeHash = meta.sourceCode.slice(0, 100);
+  const problemKey = `${meta.problemTitle}:${codeHash}`;
 
+  if (sessionSyncedProblems.has(problemKey)) {
+    return;
+  }
   if (now - lastSyncedTimestamp < 5000 && lastSyncedHash === codeHash) {
     return;
   }
   lastSyncedTimestamp = now;
   lastSyncedHash = codeHash;
+  sessionSyncedProblems.add(problemKey);
 
   console.warn('Syncing accepted LeetCode submission to GitHub:', meta.problemTitle);
   ToastManager.showUploading(meta.problemTitle);
@@ -183,7 +224,16 @@ window.addEventListener('message', (event) => {
   }
 });
 
+window.addEventListener('click', (event) => {
+  const target = event.target as HTMLElement | null;
+  if (target && (target.textContent?.includes('Submit') || target.closest('[data-e2e-locator="console-submit-button"]'))) {
+    lastSubmitClickTime = Date.now();
+  }
+});
+
 const observer = new MutationObserver(() => {
+  if (Date.now() - lastSubmitClickTime > 15000) return;
+
   const resultSpan = document.querySelector('[data-e2e-locator="submission-result"], [class*="status-accepted"], .text-green-s');
   if (resultSpan && resultSpan.textContent && resultSpan.textContent.includes('Accepted')) {
     const meta = extractPageMetadata();

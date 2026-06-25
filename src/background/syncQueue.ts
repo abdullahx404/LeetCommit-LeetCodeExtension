@@ -129,7 +129,7 @@ export class SyncQueue {
     // Exact user requested commit message format
     const timeStr = meta.runtime || '0 ms';
     const spaceStr = meta.memory || '0 MB';
-    const commitMsg = `Time: ${timeStr}, Space: ${spaceStr} - ${meta.problemTitle} (${meta.language})`;
+    const commitMsg = `Time: ${timeStr}, Space: ${spaceStr}`;
 
     const shaToPass = existingCacheItem ? existingCacheItem.fileSha : undefined;
 
