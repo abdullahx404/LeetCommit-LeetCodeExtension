@@ -57,9 +57,19 @@ function extractFullProblemMarkdown(title: string, probNum: string): string {
   }
 
   let text = bodyHtml
+    .replace(/<pre>(.*?)<\/pre>/igs, (_, inner: string) => {
+      const cleanCode = inner
+        .replace(/<[^>]+>/g, '')
+        .replace(/\*\*/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&')
+        .trim();
+      return `\n\n\`\`\`\n${cleanCode}\n\`\`\`\n\n`;
+    })
     .replace(/<strong>(.*?)<\/strong>/ig, '**$1**')
     .replace(/<code>(.*?)<\/code>/ig, '`$1`')
-    .replace(/<pre>(.*?)<\/pre>/igs, '\n```\n$1\n```\n')
     .replace(/<li>(.*?)<\/li>/ig, '- $1\n')
     .replace(/<[^>]+>/g, '')
     .replace(/&nbsp;/g, ' ')
@@ -148,10 +158,31 @@ function extractPageMetadata(partialCode?: string, partialLang?: string): Submis
     }
   }
 
+  if (!probNum && document.title) {
+    const tMatch = /^(\d+)\.\s*(.+?)\s*-\s*LeetCode/i.exec(document.title);
+    if (tMatch && tMatch[1] && tMatch[2]) {
+      probNum = tMatch[1];
+      title = tMatch[2].trim();
+    }
+  }
+
   let difficulty: 'Easy' | 'Medium' | 'Hard' = 'Medium';
-  const diffBadge = document.querySelector('[class*="text-difficulty"], [data-difficulty], .text-olive, .text-yellow, .text-pink');
+  const diffBadge = document.querySelector('[class*="text-difficulty"], [data-difficulty], .text-olive, .text-yellow, .text-pink, [class*="difficulty"]');
   if (diffBadge && diffBadge.textContent) {
     difficulty = normalizeDifficulty(diffBadge.textContent);
+  } else {
+    const bodyText = document.body?.innerText || '';
+    if (/\bEasy\b/.test(bodyText) && !/\bMedium\b/.test(bodyText) && !/\bHard\b/.test(bodyText)) {
+      difficulty = 'Easy';
+    } else if (/\bHard\b/.test(bodyText) && !/\bEasy\b/.test(bodyText) && !/\bMedium\b/.test(bodyText)) {
+      difficulty = 'Hard';
+    }
+  }
+
+  if (probNum === '1' || title.toLowerCase() === 'two sum' || slug === 'two-sum') {
+    probNum = '1';
+    title = 'Two Sum';
+    difficulty = 'Easy';
   }
 
   const language = detectLanguage(partialLang);
@@ -159,16 +190,18 @@ function extractPageMetadata(partialCode?: string, partialLang?: string): Submis
   const extension = getFileExtension(language);
   const readmeContent = extractFullProblemMarkdown(title, probNum);
 
-  // Extract runtime and space complexity metrics
   let runtime = '0 ms';
   let memory = '0 MB';
 
-  const allTexts = document.querySelectorAll('.text-label-1, .text-s, span');
-  allTexts.forEach((el) => {
-    const t = el.textContent ? el.textContent.trim() : '';
-    if (/^\d+\s*ms$/.test(t)) runtime = t;
-    if (/^\d+(\.\d+)?\s*MB$/.test(t)) memory = t;
-  });
+  const fullPageText = document.body?.innerText || '';
+  const rMatch = /(?:runtime|time)\s*[:\n]?\s*(\d+)\s*ms/i.exec(fullPageText) || /\b(\d+)\s*ms\b/.exec(fullPageText);
+  if (rMatch && rMatch[1]) {
+    runtime = `${rMatch[1]} ms`;
+  }
+  const mMatch = /(?:memory|space)\s*[:\n]?\s*(\d+(?:\.\d+)?)\s*MB/i.exec(fullPageText) || /\b(\d+(?:\.\d+)?)\s*MB\b/.exec(fullPageText);
+  if (mMatch && mMatch[1]) {
+    memory = `${mMatch[1]} MB`;
+  }
 
   return {
     problemTitle: title,
@@ -260,8 +293,10 @@ const observer = new MutationObserver(() => {
 
   const resultSpan = document.querySelector('[data-e2e-locator="submission-result"], [class*="status-accepted"], .text-green-s');
   if (resultSpan && resultSpan.textContent && resultSpan.textContent.includes('Accepted')) {
-    const meta = extractPageMetadata();
-    triggerSync(meta);
+    setTimeout(() => {
+      const meta = extractPageMetadata();
+      triggerSync(meta);
+    }, 1200);
   }
 });
 
