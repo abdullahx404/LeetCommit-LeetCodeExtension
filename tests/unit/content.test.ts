@@ -35,6 +35,6 @@ describe('LeetCode Content Script Parsers', () => {
     };
 
     const gitPath = buildGitHubPath('LeetCode', sampleMeta);
-    expect(gitPath).toBe('LeetCode/Easy/0001 - Two Sum  Fast.cpp');
+    expect(gitPath).toBe('Easy/0001 - Two Sum  Fast/Solution.cpp');
   });
 });

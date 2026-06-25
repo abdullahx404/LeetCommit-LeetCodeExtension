@@ -20,6 +20,7 @@ export interface SubmissionMetadata {
   timestamp: number;
   runtime?: string;
   memory?: string;
+  readmeContent?: string;
 }
 
 export interface CachedProblem {
@@ -27,6 +28,7 @@ export interface CachedProblem {
   titleSlug: string;
   difficulty: 'Easy' | 'Medium' | 'Hard';
   fileSha: string;
+  readmeSha?: string;
   codeHash: string;
   lastUpdated: number;
   runtime?: string;

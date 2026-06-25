@@ -44,19 +44,37 @@ function extractEditorCode(): string {
 }
 
 /**
- * Extracts problem description summary for file header comments.
+ * Extracts full problem statement markdown for problem README.md.
  */
-function extractProblemDescription(): string {
-  const metaDesc = document.querySelector('meta[name="description"]');
-  if (metaDesc) {
-    const content = metaDesc.getAttribute('content');
-    if (content) return content;
+function extractFullProblemMarkdown(title: string, probNum: string): string {
+  let bodyHtml = '';
+  const descContainer = document.querySelector('div[data-track-load="description_content"], .content__u3I1, [class*="_1l1ma"]');
+  if (descContainer) {
+    bodyHtml = descContainer.innerHTML;
+  } else {
+    const metaDesc = document.querySelector('meta[name="description"]');
+    bodyHtml = metaDesc ? metaDesc.getAttribute('content') || '' : '';
   }
-  const descContainer = document.querySelector('div[data-track-load="description_content"]');
-  if (descContainer && descContainer.textContent) {
-    return descContainer.textContent.trim().slice(0, 400);
+
+  let text = bodyHtml
+    .replace(/<strong>(.*?)<\/strong>/ig, '**$1**')
+    .replace(/<code>(.*?)<\/code>/ig, '`$1`')
+    .replace(/<pre>(.*?)<\/pre>/igs, '\n```\n$1\n```\n')
+    .replace(/<li>(.*?)<\/li>/ig, '- $1\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  if (!text) {
+    text = 'Problem description not available.';
   }
-  return '';
+
+  const numPrefix = probNum ? `${Number(probNum)}. ` : '';
+  return `# ${numPrefix}${title}\n\n## Problem Statement\n\n${text}\n`;
 }
 
 /**
@@ -139,14 +157,7 @@ function extractPageMetadata(partialCode?: string, partialLang?: string): Submis
   const language = detectLanguage(partialLang);
   const rawCode = partialCode || extractEditorCode();
   const extension = getFileExtension(language);
-  const desc = extractProblemDescription();
-
-  let code = rawCode;
-  if (desc && !rawCode.includes('Problem:')) {
-    const prefix = (language === 'python3' || language === 'Python' || language === 'Ruby') ? '#' : '//';
-    const cleanDesc = desc.replace(/\r?\n+/g, ' ').slice(0, 300);
-    code = `${prefix} Problem: ${title}\n${prefix} Description: ${cleanDesc}...\n\n${rawCode}`;
-  }
+  const readmeContent = extractFullProblemMarkdown(title, probNum);
 
   // Extract runtime and space complexity metrics
   let runtime = '0 ms';
@@ -165,10 +176,11 @@ function extractPageMetadata(partialCode?: string, partialLang?: string): Submis
     difficulty,
     language,
     extension,
-    sourceCode: code,
+    sourceCode: rawCode,
     timestamp: Date.now(),
     runtime,
     memory,
+    readmeContent,
   };
 }
 

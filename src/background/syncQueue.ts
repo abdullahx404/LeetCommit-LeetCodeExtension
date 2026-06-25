@@ -1,7 +1,7 @@
 import { SubmissionMetadata, CachedProblem, SyncStats } from '../types';
 import { StorageService } from '../storage';
 import { GitHubService } from '../github';
-import { buildGitHubPath, extractTitleSlug } from '../content/parser';
+import { buildProblemFolderPath, extractTitleSlug } from '../content/parser';
 import { utf8ToBase64 } from '../utils';
 import { ReadmeGenerator } from './readmeGenerator';
 import { AlarmService } from './alarms';
@@ -123,7 +123,8 @@ export class SyncQueue {
       return false;
     }
 
-    const gitPath = buildGitHubPath(settings.rootFolder, meta);
+    const folderPath = buildProblemFolderPath(settings.rootFolder, meta);
+    const codePath = `${folderPath}/Solution.${meta.extension}`;
     const base64Code = utf8ToBase64(meta.sourceCode);
     
     // Exact user requested commit message format
@@ -135,13 +136,34 @@ export class SyncQueue {
 
     const res = await GitHubService.createOrUpdateFile(
       settings,
-      gitPath,
+      codePath,
       base64Code,
       commitMsg,
       shaToPass
     );
 
     const newSha = res.content ? res.content.sha : '';
+    let readmeSha = existingCacheItem?.readmeSha;
+
+    if (meta.readmeContent) {
+      try {
+        const docPath = `${folderPath}/README.md`;
+        const base64Doc = utf8ToBase64(meta.readmeContent);
+        const docRes = await GitHubService.createOrUpdateFile(
+          settings,
+          docPath,
+          base64Doc,
+          `Docs: Add problem statement for ${meta.problemTitle}`,
+          readmeSha
+        );
+        if (docRes.content) {
+          readmeSha = docRes.content.sha;
+        }
+      } catch (err) {
+        console.error('Failed to upload problem README.md:', err);
+      }
+    }
+
     const titleSlug = extractTitleSlug(meta.problemTitle.toLowerCase().replace(/\s+/g, '-'));
 
     const updatedProblem: CachedProblem = {
@@ -149,6 +171,7 @@ export class SyncQueue {
       titleSlug,
       difficulty: meta.difficulty,
       fileSha: newSha,
+      readmeSha,
       codeHash: currentHash,
       lastUpdated: Date.now(),
       runtime: timeStr,
@@ -163,12 +186,12 @@ export class SyncQueue {
       const latestCache = await StorageService.getCache();
       const mdContent = ReadmeGenerator.generate(latestStats, latestCache);
       const base64Md = utf8ToBase64(mdContent);
-      const cleanRoot = settings.rootFolder.replace(/^\/+|\/+$/g, '').trim() || 'LeetCode';
-      const readmePath = `${cleanRoot}/README.md`;
+      const cleanRoot = settings.rootFolder.replace(/^\/+|\/+$/g, '').trim();
+      const readmeIndexPath = cleanRoot && cleanRoot.toLowerCase() !== 'leetcode' ? `${cleanRoot}/README.md` : 'README.md';
 
       await GitHubService.createOrUpdateFile(
         settings,
-        readmePath,
+        readmeIndexPath,
         base64Md,
         'Update repository README index'
       );

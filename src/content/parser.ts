@@ -58,20 +58,30 @@ export function normalizeDifficulty(difficulty: string): 'Easy' | 'Medium' | 'Ha
 }
 
 /**
- * Constructs a clean problem folder path for GitHub repository commit.
- * Example: "LeetCode/Easy/0001 - Two Sum.cpp"
+ * Constructs a clean problem folder path for GitHub repository upload.
+ * Example: "Easy/0001 - Two Sum" or "LeetCode/Easy/0001 - Two Sum"
  */
-export function buildGitHubPath(rootFolder: string, meta: SubmissionMetadata): string {
+export function buildProblemFolderPath(rootFolder: string, meta: SubmissionMetadata): string {
   const paddedNum = meta.problemNumber ? meta.problemNumber.padStart(4, '0') : '0000';
-  const ext = getFileExtension(meta.language);
   // eslint-disable-next-line no-control-regex
   const cleanTitle = meta.problemTitle.replace(/[<>:"/\\|?*\x00-\x1F]/g, '').trim() || 'Solution';
-
-  const filename = `${paddedNum} - ${cleanTitle}.${ext}`;
+  const folderName = `${paddedNum} - ${cleanTitle}`;
   const diffFolder = normalizeDifficulty(meta.difficulty);
 
-  const cleanRoot = rootFolder.replace(/^\/+|\/+$/g, '').trim() || 'LeetCode';
-  return `${cleanRoot}/${diffFolder}/${filename}`;
+  const cleanRoot = rootFolder.replace(/^\/+|\/+$/g, '').trim();
+  if (cleanRoot && cleanRoot.toLowerCase() !== 'leetcode') {
+    return `${cleanRoot}/${diffFolder}/${folderName}`;
+  }
+  return `${diffFolder}/${folderName}`;
+}
+
+/**
+ * Constructs the code target filepath inside the problem folder.
+ */
+export function buildGitHubPath(rootFolder: string, meta: SubmissionMetadata): string {
+  const folder = buildProblemFolderPath(rootFolder, meta);
+  const ext = getFileExtension(meta.language);
+  return `${folder}/Solution.${ext}`;
 }
 
 /**

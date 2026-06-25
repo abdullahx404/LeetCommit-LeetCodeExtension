@@ -88,9 +88,9 @@ describe('End-to-End System Integration Suite', () => {
 
     // Verify PUT requests (Solution file + README index)
     expect(putPayloads.length).toBe(2);
-    expect(putPayloads[0].path).toBe('LeetCode/Hard/0042 - Trapping Rain Water.cpp');
+    expect(putPayloads[0].path).toBe('Hard/0042 - Trapping Rain Water/Solution.cpp');
     expect(putPayloads[0].content).toBe(utf8ToBase64(submissionRainWater.sourceCode));
-    expect(putPayloads[1].path).toBe('LeetCode/README.md');
+    expect(putPayloads[1].path).toBe('README.md');
 
     // Verify decoded README table
     const readmeDecoded1 = Buffer.from(putPayloads[1].content, 'base64').toString('utf8');
@@ -112,7 +112,7 @@ describe('End-to-End System Integration Suite', () => {
     const successTwo = await SyncQueue.syncSubmission(submissionTwoSum);
     expect(successTwo).toBe(true);
     expect(putPayloads.length).toBe(2);
-    expect(putPayloads[0].path).toBe('LeetCode/Easy/0001 - Two Sum.py');
+    expect(putPayloads[0].path).toBe('Easy/0001 - Two Sum/Solution.py');
 
     // Verify final combined README sorting (#0001 before #0042)
     const readmeDecoded2 = Buffer.from(putPayloads[1].content, 'base64').toString('utf8');
