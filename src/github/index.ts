@@ -83,13 +83,17 @@ export class GitHubService {
    * Verifies if the provided configuration settings and Personal Access Token are valid.
    */
   public static async verifyCredentials(settings: UserSettings): Promise<boolean> {
-    if (!settings.githubToken || !settings.repoOwner || !settings.repoName) {
+    const cleanOwner = settings.repoOwner ? settings.repoOwner.replace(/['"\s]/g, '') : '';
+    const cleanName = settings.repoName ? settings.repoName.replace(/['"\s]/g, '').replace(/\.git$/i, '') : '';
+    const cleanToken = settings.githubToken ? settings.githubToken.replace(/['"\s]/g, '') : '';
+
+    if (!cleanToken || !cleanOwner || !cleanName) {
       return false;
     }
 
     try {
-      const endpoint = `/repos/${encodeURIComponent(settings.repoOwner)}/${encodeURIComponent(settings.repoName)}`;
-      const response = await this.request(endpoint, settings.githubToken);
+      const endpoint = `/repos/${encodeURIComponent(cleanOwner)}/${encodeURIComponent(cleanName)}`;
+      const response = await this.request(endpoint, cleanToken);
       return response.ok;
     } catch {
       return false;

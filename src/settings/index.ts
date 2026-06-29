@@ -20,19 +20,19 @@ function showBanner(message: string, isSuccess: boolean): void {
 }
 
 function parseRepoSlug(rawUrl: string): { owner: string; name: string } {
-  const clean = rawUrl.trim().replace(/^(https?:\/\/)?(www\.)?github\.com\//i, '').replace(/\/+$/, '');
-  const parts = clean.split('/');
-  return {
-    owner: parts[0] ? parts[0].trim() : '',
-    name: parts[1] ? parts[1].trim().replace(/\.git$/i, '') : '',
-  };
+  let clean = rawUrl.trim().split('?')[0]!.split('#')[0]!.trim();
+  clean = clean.replace(/^(https?:\/\/)?(www\.)?github\.com\//i, '').replace(/\/+$/, '');
+  const parts = clean.split('/').filter(Boolean);
+  const owner = parts[0] ? parts[0].trim() : '';
+  const name = parts[1] ? parts[1].trim().replace(/\.git$/i, '') : '';
+  return { owner, name };
 }
 
 function updateExtractedFields(): void {
   if (!repoUrlInput || !ownerInput || !repoInput) return;
   const parsed = parseRepoSlug(repoUrlInput.value);
-  ownerInput.value = parsed.owner;
-  repoInput.value = parsed.name;
+  if (parsed.owner) ownerInput.value = parsed.owner;
+  if (parsed.name) repoInput.value = parsed.name;
 }
 
 if (repoUrlInput) {
@@ -43,11 +43,13 @@ if (repoUrlInput) {
 }
 
 function collectSettings(): UserSettings {
-  updateExtractedFields();
+  if (repoUrlInput && repoUrlInput.value.trim().includes('/')) {
+    updateExtractedFields();
+  }
   return {
-    githubToken: tokenInput?.value.trim() || '',
-    repoOwner: ownerInput?.value.trim() || '',
-    repoName: repoInput?.value.trim() || '',
+    githubToken: tokenInput?.value.replace(/['"\s]/g, '') || '',
+    repoOwner: ownerInput?.value.replace(/['"\s]/g, '') || '',
+    repoName: repoInput?.value.replace(/['"\s]/g, '').replace(/\.git$/i, '') || '',
     rootFolder: folderInput?.value.trim() || 'LeetCode',
     autoSyncEnabled: autoSyncInput?.checked ?? true,
   };
@@ -88,9 +90,9 @@ async function handleTestClick(): Promise<void> {
   testBtn.textContent = 'Test Connection';
 
   if (isValid) {
-    showBanner('Connection verified. Repository accessible and token valid.', true);
+    showBanner(`Connection verified! Connected to ${settings.repoOwner}/${settings.repoName}.`, true);
   } else {
-    showBanner('Connection failed. Please check repository link and token permissions.', false);
+    showBanner(`Connection failed for ${settings.repoOwner}/${settings.repoName}. Check repository access and token scope.`, false);
   }
 }
 
