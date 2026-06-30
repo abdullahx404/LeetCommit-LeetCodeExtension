@@ -262,9 +262,11 @@ if (chrome?.runtime?.id) {
     if (message && typeof message === 'object' && 'type' in message) {
       const msg = message as { type: string; payload?: { status?: string; title?: string; error?: string } };
       if (msg.type === 'GITLEET_SYNC_STATUS' && msg.payload) {
-        if (msg.payload.status === 'SUCCESS') {
+        if (msg.payload.status === 'SUCCESS' || msg.payload.status === 'SKIPPED') {
+          console.warn(`GitLeet sync confirmed (${msg.payload.status}):`, msg.payload.title);
           ToastManager.showSuccess(msg.payload.title || 'Solution');
         } else if (msg.payload.status === 'ERROR') {
+          console.warn('GitLeet sync failed:', msg.payload.error);
           ToastManager.showError(msg.payload.error || 'Upload failed');
         }
       }

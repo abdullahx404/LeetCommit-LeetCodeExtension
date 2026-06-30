@@ -34,11 +34,21 @@ export class SyncQueue {
   private static isProcessing = false;
 
   private static notifyTab(tabId: number | undefined, payload: { status: 'SUCCESS' | 'SKIPPED' | 'ERROR'; title?: string; error?: string }): void {
-    if (tabId !== undefined && chrome.tabs && chrome.tabs.sendMessage) {
-      chrome.tabs.sendMessage(tabId, {
-        type: 'GITLEET_SYNC_STATUS',
-        payload,
-      }).catch(() => {});
+    const send = (id: number) => {
+      if (typeof chrome !== 'undefined' && chrome.tabs?.sendMessage) {
+        chrome.tabs.sendMessage(id, { type: 'GITLEET_SYNC_STATUS', payload }).catch(() => {});
+      }
+    };
+
+    if (tabId !== undefined) {
+      send(tabId);
+    }
+    if (typeof chrome !== 'undefined' && chrome.tabs?.query) {
+      chrome.tabs.query({ url: '*://leetcode.com/*' }, (tabs) => {
+        tabs.forEach((t) => {
+          if (t.id && t.id !== tabId) send(t.id);
+        });
+      });
     }
   }
 
