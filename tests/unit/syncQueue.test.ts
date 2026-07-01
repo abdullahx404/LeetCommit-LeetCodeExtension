@@ -86,12 +86,18 @@ describe('SyncQueue Orchestrator Engine', () => {
       autoSyncEnabled: true,
     });
 
-    vi.spyOn(StorageService, 'getCache').mockResolvedValue({});
-    const cacheSpy = vi.spyOn(StorageService, 'updateCacheProblem').mockResolvedValue();
+    const mockCacheObj: Record<string, any> = {
+      '0002': { difficulty: 'Medium' },
+      '0003': { difficulty: 'Hard' },
+    };
+    vi.spyOn(StorageService, 'getCache').mockImplementation(async () => mockCacheObj);
+    const cacheSpy = vi.spyOn(StorageService, 'updateCacheProblem').mockImplementation(async (prob) => {
+      mockCacheObj[prob.problemNumber] = prob;
+    });
     const statsGetSpy = vi.spyOn(StorageService, 'getStats').mockResolvedValue({
-      totalSolved: 10,
-      easyCount: 4,
-      mediumCount: 5,
+      totalSolved: 2,
+      easyCount: 0,
+      mediumCount: 1,
       hardCount: 1,
       lastSyncedProblem: null,
     });
@@ -124,8 +130,10 @@ describe('SyncQueue Orchestrator Engine', () => {
     expect(statsGetSpy).toHaveBeenCalled();
     expect(statsSaveSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        totalSolved: 11,
-        easyCount: 5,
+        totalSolved: 3,
+        easyCount: 1,
+        mediumCount: 1,
+        hardCount: 1,
       }) as unknown
     );
   });

@@ -63,6 +63,6 @@ describe('ReadmeGenerator Markdown Builder', () => {
     };
 
     const md = ReadmeGenerator.generate(emptyStats, {});
-    expect(md).toContain('| - | No solutions synced yet | - | - | - | - |');
+    expect(md).toContain('| - | No solutions synced yet | - | - |');
   });
 });

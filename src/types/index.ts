@@ -25,6 +25,7 @@ export interface SubmissionMetadata {
 
 export interface CachedProblem {
   problemNumber: string;
+  title?: string;
   titleSlug: string;
   difficulty: 'Easy' | 'Medium' | 'Hard';
   fileSha: string;

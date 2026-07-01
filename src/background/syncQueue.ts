@@ -140,10 +140,7 @@ export class SyncQueue {
     const codePath = `${folderPath}/Solution.${meta.extension}`;
     const base64Code = utf8ToBase64(meta.sourceCode);
     
-    // Exact user requested commit message format
-    const timeStr = meta.runtime || '0 ms';
-    const spaceStr = meta.memory || '0 MB';
-    const commitMsg = `Time: ${timeStr}, Space: ${spaceStr}`;
+    const commitMsg = `Add ${meta.problemTitle} (${meta.language})`;
 
     const shaToPass = existingCacheItem ? existingCacheItem.fileSha : undefined;
 
@@ -181,14 +178,13 @@ export class SyncQueue {
 
     const updatedProblem: CachedProblem = {
       problemNumber: meta.problemNumber,
+      title: meta.problemTitle,
       titleSlug,
       difficulty: meta.difficulty,
       fileSha: newSha,
       readmeSha,
       codeHash: currentHash,
       lastUpdated: Date.now(),
-      runtime: timeStr,
-      memory: spaceStr,
     };
 
     await StorageService.updateCacheProblem(updatedProblem);
@@ -218,12 +214,14 @@ export class SyncQueue {
   }
 
   private static async updateSyncStats(meta: SubmissionMetadata): Promise<void> {
+    const cache = await StorageService.getCache();
+    const problems = Object.values(cache);
     const stats: SyncStats = await StorageService.getStats();
-    stats.totalSolved += 1;
 
-    if (meta.difficulty === 'Easy') stats.easyCount += 1;
-    else if (meta.difficulty === 'Hard') stats.hardCount += 1;
-    else stats.mediumCount += 1;
+    stats.totalSolved = problems.length;
+    stats.easyCount = problems.filter((p) => p.difficulty === 'Easy').length;
+    stats.mediumCount = problems.filter((p) => p.difficulty === 'Medium').length;
+    stats.hardCount = problems.filter((p) => p.difficulty === 'Hard').length;
 
     stats.lastSyncedProblem = {
       number: meta.problemNumber,

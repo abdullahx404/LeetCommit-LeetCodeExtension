@@ -58,25 +58,38 @@ function extractFullProblemMarkdown(title: string, probNum: string): string {
   }
 
   let text = bodyHtml
-    .replace(/<pre>(.*?)<\/pre>/igs, (_, inner: string) => {
-      const cleanCode = inner
+    .replace(/<pre[^>]*>(.*?)<\/pre>/igs, (_, inner: string) => {
+      let clean = inner
+        .replace(/<br\s*\/?>/ig, '\n')
+        .replace(/<\/(?:p|div|li)>/ig, '\n')
+        .replace(/<(?:strong|b)[^>]*>(.*?)<\/(?:strong|b)>/ig, '**$1**')
+        .replace(/<code[^>]*>(.*?)<\/code>/ig, '`$1`')
         .replace(/<[^>]+>/g, '')
-        .replace(/\*\*/g, '')
         .replace(/&nbsp;/g, ' ')
         .replace(/&lt;/g, '<')
         .replace(/&gt;/g, '>')
-        .replace(/&amp;/g, '&')
+        .replace(/&amp;/g, '&');
+
+      clean = clean
+        .replace(/(?:\*\*)?(Input|Output|Explanation)(?:\*\*)?\s*:/ig, '\n**$1:**')
         .trim();
-      return `\n\n\`\`\`\n${cleanCode}\n\`\`\`\n\n`;
+
+      const lines = clean.split('\n').map((l) => l.trim()).filter(Boolean);
+      return '\n\n' + lines.join('\n\n') + '\n\n';
     })
-    .replace(/<strong>(.*?)<\/strong>/ig, '**$1**')
-    .replace(/<code>(.*?)<\/code>/ig, '`$1`')
-    .replace(/<li>(.*?)<\/li>/ig, '- $1\n')
+    .replace(/<br\s*\/?>/ig, '\n')
+    .replace(/<\/(?:p|div|ul|ol|h[1-6])>/ig, '\n\n')
+    .replace(/<(?:strong|b)[^>]*>(.*?)<\/(?:strong|b)>/ig, '**$1**')
+    .replace(/<code[^>]*>(.*?)<\/code>/ig, '`$1`')
+    .replace(/<li[^>]*>(.*?)<\/li>/ig, '- $1\n')
     .replace(/<[^>]+>/g, '')
     .replace(/&nbsp;/g, ' ')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&amp;/g, '&')
+    .replace(/(Example\s+\d+)\s*:/ig, '\n\n**$1:**\n\n')
+    .replace(/(Constraints)\s*:/ig, '\n\n**$1:**\n\n')
+    .replace(/(?:\*\*)?(Input|Output|Explanation)(?:\*\*)?\s*:/ig, '\n\n**$1:**')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
