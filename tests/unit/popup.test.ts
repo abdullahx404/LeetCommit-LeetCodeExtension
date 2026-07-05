@@ -69,7 +69,7 @@ describe('ToastManager In-Page UI Component', () => {
 
     const container = (ToastManager as unknown as { container: MockHtmlElement }).container;
     expect(container).toBeDefined();
-    expect(container.id).toBe('gitleet-toast-container');
+    expect(container.id).toBe('leetcommit-toast-container');
     expect(container.style.position).toBe('fixed');
     expect(container.getInnerContent()).toContain('Syncing...');
   });

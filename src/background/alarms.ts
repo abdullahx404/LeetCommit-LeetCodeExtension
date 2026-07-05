@@ -6,7 +6,7 @@ import { SubmissionMetadata } from '../types';
  * Service managing Chrome Alarms for offline retry scheduling.
  */
 export class AlarmService {
-  public static readonly RETRY_ALARM_NAME = 'GITLEET_RETRY_SYNC';
+  public static readonly RETRY_ALARM_NAME = 'LEETCOMMIT_RETRY_SYNC';
 
   /**
    * Schedules a background wakeup alarm to retry offline synchronization.

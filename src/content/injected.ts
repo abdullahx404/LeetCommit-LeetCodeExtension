@@ -8,9 +8,9 @@ export function injectMainWorldInterceptor(): void {
 }
 
 (function initMainWorldInterceptor() {
-  const win = window as unknown as { __gitleet_injected__?: boolean; fetch: typeof fetch };
-  if (win.__gitleet_injected__) return;
-  win.__gitleet_injected__ = true;
+  const win = window as unknown as { __leetcommit_injected__?: boolean; fetch: typeof fetch };
+  if (win.__leetcommit_injected__) return;
+  win.__leetcommit_injected__ = true;
 
   const origFetch = win.fetch;
   win.fetch = async function (...args) {
@@ -54,7 +54,7 @@ export function injectMainWorldInterceptor(): void {
 
           if (isAccepted) {
             window.postMessage({
-              type: 'GITLEET_SUBMISSION_ACCEPTED',
+              type: 'LEETCOMMIT_SUBMISSION_ACCEPTED',
               payload: {
                 language: lang,
                 code: code,
@@ -92,7 +92,7 @@ export function injectMainWorldInterceptor(): void {
             if ((data['state'] === 'SUCCESS' && data['status_msg'] === 'Accepted') ||
                 (data['data'] && typeof data['data'] === 'object' && ((data['data'] as Record<string, unknown>)['submissionDetails'] as Record<string, unknown>)?.['statusDisplay'] === 'Accepted')) {
               window.postMessage({
-                type: 'GITLEET_SUBMISSION_ACCEPTED',
+                type: 'LEETCOMMIT_SUBMISSION_ACCEPTED',
                 payload: { timestamp: Date.now() },
               }, '*');
             }

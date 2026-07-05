@@ -1,5 +1,5 @@
 /**
- * Utility functions for GitLeet.
+ * Utility functions for LeetCommit.
  */
 
 export function sanitizeFilename(title: string): string {

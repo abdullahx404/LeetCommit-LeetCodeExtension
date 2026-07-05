@@ -36,7 +36,7 @@ export class SyncQueue {
   private static notifyTab(tabId: number | undefined, payload: { status: 'SUCCESS' | 'SKIPPED' | 'ERROR'; title?: string; error?: string }): void {
     const send = (id: number) => {
       if (typeof chrome !== 'undefined' && chrome.tabs?.sendMessage) {
-        chrome.tabs.sendMessage(id, { type: 'GITLEET_SYNC_STATUS', payload }).catch(() => {});
+        chrome.tabs.sendMessage(id, { type: 'LEETCOMMIT_SYNC_STATUS', payload }).catch(() => {});
       }
     };
 
@@ -122,7 +122,7 @@ export class SyncQueue {
     const settings = await StorageService.getSettings();
     if (!settings || !settings.autoSyncEnabled || !settings.githubToken) {
       console.warn('Sync aborted: User settings unconfigured or auto-sync disabled.');
-      this.notifyTab(tabId, { status: 'ERROR', error: 'GitLeet settings unconfigured or auto-sync disabled.' });
+      this.notifyTab(tabId, { status: 'ERROR', error: 'LeetCommit settings unconfigured or auto-sync disabled.' });
       return false;
     }
 

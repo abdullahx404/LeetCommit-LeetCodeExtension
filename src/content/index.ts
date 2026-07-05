@@ -41,13 +41,30 @@ function extractEditorCode(): string {
     }
   }
 
-  return '// Source code extraction failed';
+  const monacoLines = document.querySelectorAll('.view-lines .view-line');
+  if (monacoLines.length > 0) {
+    return Array.from(monacoLines)
+      .map((line) => line.textContent || '')
+      .join('\n');
+  }
+
+  const codeMirror = document.querySelector('.CodeMirror');
+  if (codeMirror && (codeMirror as unknown as { CodeMirror?: { getValue(): string } }).CodeMirror) {
+    return (codeMirror as unknown as { CodeMirror: { getValue(): string } }).CodeMirror.getValue();
+  }
+
+  const textarea = document.querySelector('textarea.inputarea, textarea[class*="code"]');
+  if (textarea && (textarea as HTMLTextAreaElement).value) {
+    return (textarea as HTMLTextAreaElement).value;
+  }
+
+  return '// Solution code could not be automatically extracted.';
 }
 
 /**
  * Extracts full problem statement markdown for problem README.md.
  */
-function extractFullProblemMarkdown(title: string, probNum: string): string {
+function extractFullProblemMarkdown(title: string, probNum: string, difficulty?: string): string {
   let bodyHtml = '';
   const descContainer = document.querySelector('div[data-track-load="description_content"], .content__u3I1, [class*="_1l1ma"]');
   if (descContainer) {
@@ -58,8 +75,10 @@ function extractFullProblemMarkdown(title: string, probNum: string): string {
   }
 
   let text = bodyHtml
+    .replace(/<sup[^>]*>(.*?)<\/sup>/igs, '^$1')
+    .replace(/<(?:em|i)[^>]*>(.*?)<\/(?:em|i)>/igs, '*$1*')
     .replace(/<pre[^>]*>(.*?)<\/pre>/igs, (_, inner: string) => {
-      let clean = inner
+      const clean = inner
         .replace(/<br\s*\/?>/ig, '\n')
         .replace(/<\/(?:p|div|li)>/ig, '\n')
         .replace(/<(?:strong|b)[^>]*>(.*?)<\/(?:strong|b)>/ig, '**$1**')
@@ -70,23 +89,29 @@ function extractFullProblemMarkdown(title: string, probNum: string): string {
         .replace(/&gt;/g, '>')
         .replace(/&amp;/g, '&');
 
-      clean = clean
-        .replace(/\*\*\s*(Input|Output|Explanation)\s*:?\s*\*\*/ig, '$1:')
-        .replace(/\*\*\s*(Input|Output|Explanation)\s*:\s*/ig, '$1: ')
-        .replace(/(Input|Output|Explanation)\s*:\s*\*\*/ig, '$1: ')
-        .replace(/\b(Input|Output|Explanation)\b\s*:/ig, '\n**$1:** ');
-
       const lines = clean
         .split('\n')
         .map((l) => l.trim())
         .filter((l) => Boolean(l) && l !== '**' && l !== '****');
-      return '\n\n' + lines.map((l) => (l.startsWith('>') ? l : `> ${l}`)).join('\n') + '\n\n';
+
+      const formattedLines = lines.map((line) => {
+        const match = /^(?:(?:\*\*|strong|b|\s)*)?(Input|Output|Explanation)(?:(?:\*\*|strong|b|\s)*)?\s*:?\s*(.*)/i.exec(line);
+        if (match && match[1] && match[2] !== undefined) {
+          const kw = match[1].charAt(0).toUpperCase() + match[1].slice(1).toLowerCase();
+          const valClean = match[2].replace(/`/g, '').trim();
+          const valCode = valClean ? ` \`${valClean}\`` : '';
+          return `**${kw}:**${valCode}`;
+        }
+        return line;
+      });
+
+      return '\n\n' + formattedLines.map((l) => (l.startsWith('>') ? l : `> ${l}`)).join('\n> \n') + '\n\n';
     })
     .replace(/<br\s*\/?>/ig, '\n')
     .replace(/<\/(?:p|div|ul|ol|h[1-6])>/ig, '\n\n')
     .replace(/<(?:strong|b)[^>]*>(.*?)<\/(?:strong|b)>/ig, '**$1**')
     .replace(/<code[^>]*>(.*?)<\/code>/ig, '`$1`')
-    .replace(/<li[^>]*>(.*?)<\/li>/ig, '\n\n- $1\n\n')
+    .replace(/<li[^>]*>(.*?)<\/li>/ig, '\n\n* $1\n\n')
     .replace(/<[^>]+>/g, '')
     .replace(/&nbsp;/g, ' ')
     .replace(/&lt;/g, '<')
@@ -96,16 +121,13 @@ function extractFullProblemMarkdown(title: string, probNum: string): string {
   text = text.replace(/`+/g, '`').replace(/`\s*`([^`]+)`\s*`/g, '`$1`');
 
   text = text
-    .replace(/\*\*\s*(Example\s+\d+|Constraints|Follow-up)\s*:?\s*\*\*/ig, '$1:')
-    .replace(/\b(Example\s+\d+|Constraints|Follow-up)\b\s*:/ig, '\n\n**$1:**\n\n')
-    .replace(/\*\*\s*(Input|Output|Explanation)\s*:?\s*\*\*/ig, '$1:')
-    .replace(/\b(Input|Output|Explanation)\b\s*:/ig, '\n\n**$1:** ')
+    .replace(/(?:\*\*|###\s*)?(Example\s+\d+|Constraints|Follow-up)(?:\*\*)?\s*:/ig, '\n\n### $1:\n\n')
     .replace(/\*\*\s*\*\*/g, '');
 
   const finalLines = text
     .split('\n')
     .map((l) => l.trim())
-    .filter((l) => l !== '**' && l !== '****' && l !== '`' && l !== '``');
+    .filter((l) => l !== '**' && l !== '****' && l !== '`' && l !== '``' && l !== '*');
 
   text = finalLines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 
@@ -114,7 +136,8 @@ function extractFullProblemMarkdown(title: string, probNum: string): string {
   }
 
   const numPrefix = probNum ? `${Number(probNum)}. ` : '';
-  return `# ${numPrefix}${title}\n\n## Problem Statement\n\n${text}\n`;
+  const diffPill = difficulty ? `\`${difficulty}\`\n\n` : '';
+  return `# ${numPrefix}${title}\n\n${diffPill}${text}\n`;
 }
 
 /**
@@ -123,8 +146,23 @@ function extractFullProblemMarkdown(title: string, probNum: string): string {
 function detectLanguage(partialLang?: string): string {
   if (partialLang) {
     if (partialLang === 'cpp' || partialLang.toLowerCase() === 'c++') return 'C++';
-    if (partialLang === 'python' || partialLang === 'python3') return 'python3';
-    return partialLang;
+    if (partialLang === 'java') return 'Java';
+    if (partialLang === 'python' || partialLang === 'python3') return 'Python';
+    if (partialLang === 'c') return 'C';
+    if (partialLang === 'csharp' || partialLang === 'cs') return 'C#';
+    if (partialLang === 'javascript' || partialLang === 'js') return 'JavaScript';
+    if (partialLang === 'typescript' || partialLang === 'ts') return 'TypeScript';
+    if (partialLang === 'php') return 'PHP';
+    if (partialLang === 'swift') return 'Swift';
+    if (partialLang === 'kotlin' || partialLang === 'kt') return 'Kotlin';
+    if (partialLang === 'dart') return 'Dart';
+    if (partialLang === 'golang' || partialLang === 'go') return 'Go';
+    if (partialLang === 'ruby' || partialLang === 'rb') return 'Ruby';
+    if (partialLang === 'scala') return 'Scala';
+    if (partialLang === 'rust' || partialLang === 'rs') return 'Rust';
+    if (partialLang === 'racket') return 'Racket';
+    if (partialLang === 'erlang') return 'Erlang';
+    if (partialLang === 'elixir') return 'Elixir';
   }
 
   try {
@@ -134,7 +172,7 @@ function detectLanguage(partialLang?: string): string {
       if (models[0]) {
         const langId = models[0].getLanguageId();
         if (langId === 'cpp') return 'C++';
-        if (langId === 'python') return 'python3';
+        if (langId === 'python') return 'Python';
         if (langId === 'java') return 'Java';
         if (langId === 'typescript') return 'TypeScript';
         if (langId === 'golang' || langId === 'go') return 'Go';
@@ -147,19 +185,30 @@ function detectLanguage(partialLang?: string): string {
     // Ignore Monaco extraction failure
   }
 
-  const validLangs = ['c++', 'python', 'python3', 'java', 'typescript', 'javascript', 'go', 'rust', 'c#', 'c', 'kotlin', 'swift', 'ruby', 'scala', 'php', 'dart'];
-  const langEls = document.querySelectorAll('[data-cy="lang-select"], [class*="lang-select"], button');
-  for (let i = 0; i < langEls.length; i++) {
-    const txt = (langEls[i]?.textContent || '').trim();
-    const lower = txt.toLowerCase();
-    if (validLangs.includes(lower)) {
-      if (lower === 'c++') return 'C++';
-      if (lower === 'python' || lower === 'python3') return 'python3';
-      return txt;
-    }
+  const langBtn = document.querySelector('button[id*="headlessui-listbox-button"], [data-cy="lang-select"], .select-button, [class*="lang-select"]');
+  if (langBtn && langBtn.textContent) {
+    const text = langBtn.textContent.trim();
+    if (text.includes('C++')) return 'C++';
+    if (text.includes('Java') && !text.includes('Script')) return 'Java';
+    if (text.includes('Python')) return 'Python';
+    if (text === 'C') return 'C';
+    if (text.includes('C#')) return 'C#';
+    if (text.includes('JavaScript')) return 'JavaScript';
+    if (text.includes('TypeScript')) return 'TypeScript';
+    if (text.includes('PHP')) return 'PHP';
+    if (text.includes('Swift')) return 'Swift';
+    if (text.includes('Kotlin')) return 'Kotlin';
+    if (text.includes('Dart')) return 'Dart';
+    if (text.includes('Go')) return 'Go';
+    if (text.includes('Ruby')) return 'Ruby';
+    if (text.includes('Scala')) return 'Scala';
+    if (text.includes('Rust')) return 'Rust';
+    if (text.includes('Racket')) return 'Racket';
+    if (text.includes('Erlang')) return 'Erlang';
+    if (text.includes('Elixir')) return 'Elixir';
   }
 
-  return 'C++';
+  return 'Code';
 }
 
 /**
@@ -218,7 +267,7 @@ function extractPageMetadata(partialCode?: string, partialLang?: string): Submis
   const language = detectLanguage(partialLang);
   const rawCode = partialCode || extractEditorCode();
   const extension = getFileExtension(language);
-  const readmeContent = extractFullProblemMarkdown(title, probNum);
+  const readmeContent = extractFullProblemMarkdown(title, probNum, difficulty);
 
   let runtime = '0 ms';
   let memory = '0 MB';
@@ -290,12 +339,12 @@ if (chrome?.runtime?.id) {
   chrome.runtime.onMessage.addListener((message: unknown) => {
     if (message && typeof message === 'object' && 'type' in message) {
       const msg = message as { type: string; payload?: { status?: string; title?: string; error?: string } };
-      if (msg.type === 'GITLEET_SYNC_STATUS' && msg.payload) {
+      if (msg.type === 'LEETCOMMIT_SYNC_STATUS' && msg.payload) {
         if (msg.payload.status === 'SUCCESS' || msg.payload.status === 'SKIPPED') {
-          console.warn(`GitLeet sync confirmed (${msg.payload.status}):`, msg.payload.title);
+          console.warn(`LeetCommit sync confirmed (${msg.payload.status}):`, msg.payload.title);
           ToastManager.showSuccess(msg.payload.title || 'Solution');
         } else if (msg.payload.status === 'ERROR') {
-          console.warn('GitLeet sync failed:', msg.payload.error);
+          console.warn('LeetCommit sync failed:', msg.payload.error);
           ToastManager.showError(msg.payload.error || 'Upload failed');
         }
       }
@@ -307,7 +356,7 @@ window.addEventListener('message', (event) => {
   if (event.source !== window || !event.data || typeof event.data !== 'object') return;
 
   const data = event.data as { type?: string; payload?: { language?: string; code?: string } };
-  if (data.type === 'GITLEET_SUBMISSION_ACCEPTED') {
+  if (data.type === 'LEETCOMMIT_SUBMISSION_ACCEPTED') {
     const meta = extractPageMetadata(data.payload?.code, data.payload?.language);
     triggerSync(meta);
   }

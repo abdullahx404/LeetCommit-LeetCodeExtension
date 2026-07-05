@@ -12,7 +12,7 @@ export class ToastManager {
     }
 
     const div = document.createElement('div');
-    div.id = 'gitleet-toast-container';
+    div.id = 'leetcommit-toast-container';
     div.style.position = 'fixed';
     if (document.body) {
       document.body.appendChild(div);
@@ -42,7 +42,7 @@ export class ToastManager {
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
       overflow: hidden;
       white-space: nowrap;
-      animation: gitleet-popup-sequence 4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      animation: leetcommit-popup-sequence 4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
       pointer-events: auto;
     `;
 
@@ -63,7 +63,7 @@ export class ToastManager {
       font-weight: 600;
       padding-right: 20px;
       opacity: 0;
-      animation: gitleet-text-fade 4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      animation: leetcommit-text-fade 4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     `;
     textBox.textContent = text;
 

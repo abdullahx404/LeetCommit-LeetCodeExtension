@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "LeetCode Sync (GitLeet)",
+  "name": "LeetCommit",
   "version": "1.0.0",
   "description": "Automatically syncs accepted LeetCode solutions to a user's GitHub repository.",
   "icons": {

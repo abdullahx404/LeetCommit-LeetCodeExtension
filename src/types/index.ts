@@ -1,5 +1,5 @@
 /**
- * Global domain interfaces and type definitions for GitLeet.
+ * Global domain interfaces and type definitions for LeetCommit.
  */
 
 export interface UserSettings {

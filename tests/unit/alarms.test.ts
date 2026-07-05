@@ -26,7 +26,7 @@ describe('AlarmService Offline Retry Handler', () => {
     });
 
     AlarmService.scheduleRetry(5);
-    expect(createSpy).toHaveBeenCalledWith('GITLEET_RETRY_SYNC', { delayInMinutes: 5 });
+    expect(createSpy).toHaveBeenCalledWith('LEETCOMMIT_RETRY_SYNC', { delayInMinutes: 5 });
   });
 
   it('drains offline queue items and re-enqueues them into SyncQueue', async () => {

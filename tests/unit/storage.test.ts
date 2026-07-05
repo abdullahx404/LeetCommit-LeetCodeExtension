@@ -22,7 +22,7 @@ global.chrome = {
 
 import { StorageService } from '../../src/storage';
 
-describe('GitLeet Utility Functions', () => {
+describe('LeetCommit Utility Functions', () => {
   it('sanitizes problematic filenames correctly', () => {
     const rawTitle = 'Two Sum / Add Numbers : Quick <Test> *?';
     const clean = sanitizeFilename(rawTitle);

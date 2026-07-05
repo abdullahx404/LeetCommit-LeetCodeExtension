@@ -1,13 +1,13 @@
-# GitLeet - LeetCode to GitHub Sync Extension
+# LeetCommit - LeetCode to GitHub Sync Extension
 
 ![Manifest V3](https://img.shields.io/badge/Manifest-V3-00b8a3?style=for-the-badge&logo=googlechrome&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![Privacy First](https://img.shields.io/badge/Privacy-100%25_Local-58a6ff?style=for-the-badge&logo=security&logoColor=white)
 ![GitHub REST API](https://img.shields.io/badge/GitHub-REST_API_v3-181717?style=for-the-badge&logo=github&logoColor=white)
 
-GitLeet ("LeetCode Sync") is a powerful, privacy-focused Chrome Extension built on Manifest V3 and TypeScript that automatically synchronizes your accepted LeetCode solutions directly to your GitHub repository.
+LeetCommit ("LeetCode Sync") is a powerful, privacy-focused Chrome Extension built on Manifest V3 and TypeScript that automatically synchronizes your accepted LeetCode solutions directly to your GitHub repository.
 
-Unlike other tools that rely on intermediate third-party backend servers or webhooks, GitLeet operates 100% locally inside your browser. All communication happens directly between Chrome and api.github.com.
+Unlike other tools that rely on intermediate third-party backend servers or webhooks, LeetCommit operates 100% locally inside your browser. All communication happens directly between Chrome and api.github.com.
 
 ---
 
@@ -36,7 +36,7 @@ Unlike other tools that rely on intermediate third-party backend servers or webh
 ## How to Use (Quick Setup Guide)
 
 1. **Install Extension**: Load the `/dist` folder in `chrome://extensions` with Developer Mode enabled.
-2. **Open Settings**: Click the GitLeet extension icon in your toolbar and click **Settings**.
+2. **Open Settings**: Click the LeetCommit extension icon in your toolbar and click **Settings**.
 3. **Connect Repository**: Click **1-Click Generate Token** shortcut, paste your full GitHub Repository URL and token.
 4. **Solve & Sync**: Submit any passing solution on LeetCode. Your code, runtime ms, and space MB will upload automatically!
 
@@ -44,7 +44,7 @@ Unlike other tools that rely on intermediate third-party backend servers or webh
 
 ## System Architecture
 
-GitLeet operates on a direct, client-to-API communication model without intermediate servers.
+LeetCommit operates on a direct, client-to-API communication model without intermediate servers.
 
 ### Data Flow & Component Interaction
 
@@ -81,8 +81,8 @@ The codebase is structured into decoupled domain modules under src/:
 ### 2. Build the Extension
 ```bash
 # Clone the repository
-git clone https://github.com/abdullahx404/GitLeet-LeetCodeExtension.git
-cd GitLeet-LeetCodeExtension
+git clone https://github.com/abdullahx404/LeetCommit-LeetCodeExtension.git
+cd LeetCommit-LeetCodeExtension
 
 # Install dependencies
 npm ci
@@ -95,24 +95,24 @@ npm run build
 1. Open Google Chrome and navigate to chrome://extensions/.
 2. Enable **Developer mode** toggle in the top-right corner.
 3. Click **Load unpacked** and select the generated /dist directory in this project folder.
-4. Pin the GitLeet icon to your browser toolbar.
+4. Pin the LeetCommit icon to your browser toolbar.
 
 ---
 
 ## Configuration & GitHub Authentication
 
-1. Click the GitLeet extension icon and open the **Settings** gear icon (or right-click the extension icon -> Options).
+1. Click the LeetCommit extension icon and open the **Settings** gear icon (or right-click the extension icon -> Options).
 2. Generate a **Fine-Grained Personal Access Token** on GitHub:
    * Go to **GitHub Settings -> Developer Settings -> Personal access tokens -> Fine-grained tokens**.
    * Set **Repository access** strictly to **Only select repositories** and pick your destination repository.
    * Under **Permissions -> Repository permissions**, set **Contents** to **Read and write**.
-3. Paste your token, Repository Owner, and Repository Name into the GitLeet Settings page and click **Test & Save**.
+3. Paste your token, Repository Owner, and Repository Name into the LeetCommit Settings page and click **Test & Save**.
 
 ---
 
 ## Security & Privacy Policy
 
-GitLeet accesses only leetcode.com (to detect accepted submissions) and api.github.com (to upload source code files). No data is ever transmitted to any external analytics or proxy servers.
+LeetCommit accesses only leetcode.com (to detect accepted submissions) and api.github.com (to upload source code files). No data is ever transmitted to any external analytics or proxy servers.
 
 ## License
 MIT License. Created for the developer community.
