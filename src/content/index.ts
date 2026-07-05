@@ -14,12 +14,21 @@ const sessionSyncedProblems = new Set<string>();
  */
 function extractEditorCode(): string {
   try {
-    const win = window as unknown as { monaco?: { editor?: { getModels?: () => Array<{ getValue: () => string }> } } };
+    const win = window as unknown as { monaco?: { editor?: { getModels?: () => Array<{ getValue: () => string; getLanguageId?: () => string }> } } };
     if (win.monaco?.editor?.getModels) {
       const models = win.monaco.editor.getModels();
-      const firstModel = models[0];
-      if (firstModel) {
-        return firstModel.getValue();
+      let bestCode = '';
+      for (const model of models) {
+        if (model && typeof model.getValue === 'function') {
+          const val = model.getValue();
+          const lang = model.getLanguageId ? model.getLanguageId() : '';
+          if (val && val.trim().length > bestCode.trim().length && lang !== 'plaintext' && lang !== 'json') {
+            bestCode = val;
+          }
+        }
+      }
+      if (bestCode.trim().length > 10) {
+        return bestCode;
       }
     }
   } catch {
@@ -27,9 +36,20 @@ function extractEditorCode(): string {
   }
 
   // Modern LeetCode Monaco editor DOM view lines
-  const viewLines = document.querySelectorAll('.view-lines .view-line');
-  if (viewLines.length > 0) {
-    return Array.from(viewLines).map((line) => line.textContent || '').join('\n');
+  const viewLineContainers = document.querySelectorAll('.view-lines');
+  let bestDomCode = '';
+  for (let i = 0; i < viewLineContainers.length; i++) {
+    const container = viewLineContainers[i];
+    if (container) {
+      const lines = container.querySelectorAll('.view-line');
+      const text = Array.from(lines).map((l) => l.textContent || '').join('\n');
+      if (text.trim().length > bestDomCode.trim().length) {
+        bestDomCode = text;
+      }
+    }
+  }
+  if (bestDomCode.trim().length > 10) {
+    return bestDomCode;
   }
 
   const codeBlocks = document.querySelectorAll('.monaco-editor, code');
@@ -39,13 +59,6 @@ function extractEditorCode(): string {
       const text = block.textContent;
       if (text && text.length > 20 && !text.startsWith('Input:')) return text;
     }
-  }
-
-  const monacoLines = document.querySelectorAll('.view-lines .view-line');
-  if (monacoLines.length > 0) {
-    return Array.from(monacoLines)
-      .map((line) => line.textContent || '')
-      .join('\n');
   }
 
   const codeMirror = document.querySelector('.CodeMirror');
@@ -98,7 +111,7 @@ function extractFullProblemMarkdown(title: string, probNum: string, difficulty?:
         const match = /^(?:(?:\*\*|strong|b|\s)*)?(Input|Output|Explanation)(?:(?:\*\*|strong|b|\s)*)?\s*:?\s*(.*)/i.exec(line);
         if (match && match[1] && match[2] !== undefined) {
           const kw = match[1].charAt(0).toUpperCase() + match[1].slice(1).toLowerCase();
-          const valClean = match[2].replace(/`/g, '').trim();
+          const valClean = match[2].replace(/[`*]/g, '').trim();
           const valCode = valClean ? ` \`${valClean}\`` : '';
           return `**${kw}:**${valCode}`;
         }
@@ -166,19 +179,21 @@ function detectLanguage(partialLang?: string): string {
   }
 
   try {
-    const win = window as unknown as { monaco?: { editor?: { getModels?: () => Array<{ getLanguageId: () => string }> } } };
+    const win = window as unknown as { monaco?: { editor?: { getModels?: () => Array<{ getLanguageId: () => string; getValue?: () => string }> } } };
     if (win.monaco?.editor?.getModels) {
       const models = win.monaco.editor.getModels();
-      if (models[0]) {
-        const langId = models[0].getLanguageId();
-        if (langId === 'cpp') return 'C++';
-        if (langId === 'python') return 'Python';
-        if (langId === 'java') return 'Java';
-        if (langId === 'typescript') return 'TypeScript';
-        if (langId === 'golang' || langId === 'go') return 'Go';
-        if (langId === 'rust') return 'Rust';
-        if (langId === 'csharp') return 'C#';
-        return langId;
+      for (const model of models) {
+        if (model && (!model.getValue || model.getValue().trim().length > 10)) {
+          const langId = model.getLanguageId();
+          if (langId === 'cpp') return 'C++';
+          if (langId === 'python') return 'Python';
+          if (langId === 'java') return 'Java';
+          if (langId === 'typescript') return 'TypeScript';
+          if (langId === 'golang' || langId === 'go') return 'Go';
+          if (langId === 'rust') return 'Rust';
+          if (langId === 'csharp') return 'C#';
+          if (langId && langId !== 'plaintext' && langId !== 'json') return langId;
+        }
       }
     }
   } catch {
@@ -265,7 +280,7 @@ function extractPageMetadata(partialCode?: string, partialLang?: string): Submis
   }
 
   const language = detectLanguage(partialLang);
-  const rawCode = partialCode || extractEditorCode();
+  const rawCode = (partialCode && partialCode.trim().length > 10) ? partialCode : extractEditorCode();
   const extension = getFileExtension(language);
   const readmeContent = extractFullProblemMarkdown(title, probNum, difficulty);
 

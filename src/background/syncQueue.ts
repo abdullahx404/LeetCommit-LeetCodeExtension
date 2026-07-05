@@ -1,7 +1,7 @@
 import { SubmissionMetadata, CachedProblem, SyncStats } from '../types';
 import { StorageService } from '../storage';
 import { GitHubService } from '../github';
-import { buildProblemFolderPath, extractTitleSlug } from '../content/parser';
+import { buildProblemFolderPath, buildProblemFileName, extractTitleSlug } from '../content/parser';
 import { utf8ToBase64 } from '../utils';
 import { ReadmeGenerator } from './readmeGenerator';
 import { AlarmService } from './alarms';
@@ -157,7 +157,8 @@ export class SyncQueue {
 
     if (meta.readmeContent) {
       try {
-        const docPath = `${folderPath}/README.md`;
+        const docFileName = buildProblemFileName(meta);
+        const docPath = `${folderPath}/${docFileName}.md`;
         const base64Doc = utf8ToBase64(meta.readmeContent);
         const docRes = await GitHubService.createOrUpdateFile(
           settings,

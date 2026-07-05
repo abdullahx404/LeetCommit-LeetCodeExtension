@@ -21,7 +21,7 @@ export class ToastManager {
     return div;
   }
 
-  private static renderPill(text: string, bgColor: string, svgContent: string): void {
+  private static renderPill(text: string, stateClass: string, svgContent: string, durationMs: number): void {
     const parent = this.initContainer();
     if (!parent) return;
 
@@ -31,40 +31,14 @@ export class ToastManager {
     }
 
     const pill = document.createElement('div');
-    pill.className = 'notification-pill';
-    pill.style.cssText = `
-      display: flex;
-      align-items: center;
-      height: 48px;
-      background-color: ${bgColor};
-      color: #ffffff;
-      border-radius: 24px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-      overflow: hidden;
-      white-space: nowrap;
-      animation: leetcommit-popup-sequence 4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-      pointer-events: auto;
-    `;
+    pill.className = `notification-pill ${stateClass}`;
 
     const iconBox = document.createElement('div');
-    iconBox.style.cssText = `
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 48px;
-      height: 48px;
-      flex-shrink: 0;
-    `;
+    iconBox.className = 'icon-container';
     iconBox.innerHTML = svgContent;
 
     const textBox = document.createElement('span');
-    textBox.style.cssText = `
-      font-size: 16px;
-      font-weight: 600;
-      padding-right: 20px;
-      opacity: 0;
-      animation: leetcommit-text-fade 4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    `;
+    textBox.className = 'notification-text';
     textBox.textContent = text;
 
     pill.appendChild(iconBox);
@@ -78,24 +52,21 @@ export class ToastManager {
         pill.remove();
         this.activeToastEl = null;
       }
-    }, 4200);
+    }, durationMs);
   }
 
   public static showUploading(_problemTitle?: string): void {
-    const blue = '#3b82f6';
-    const svg = `<svg style="width: 24px; height: 24px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>`;
-    this.renderPill('Syncing...', blue, svg);
+    const svg = `<svg class="status-icon spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>`;
+    this.renderPill('Syncing', 'state-sync', svg, 1300);
   }
 
   public static showSuccess(_problemTitle?: string): void {
-    const green = '#10b981';
-    const svg = `<svg style="width: 24px; height: 24px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
-    this.renderPill('Committed', green, svg);
+    const svg = `<svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+    this.renderPill('Committed', 'state-committed', svg, 4200);
   }
 
   public static showError(_message?: string): void {
-    const red = '#ef4444';
-    const svg = `<svg style="width: 24px; height: 24px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
-    this.renderPill('Failed', red, svg);
+    const svg = `<svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+    this.renderPill('Failed', 'state-failed', svg, 4200);
   }
 }

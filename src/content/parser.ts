@@ -76,6 +76,16 @@ export function buildProblemFolderPath(rootFolder: string, meta: SubmissionMetad
 }
 
 /**
+ * Constructs the problem statement filename without extension (e.g., "0001 - Two Sum").
+ */
+export function buildProblemFileName(meta: SubmissionMetadata): string {
+  const paddedNum = meta.problemNumber ? meta.problemNumber.padStart(4, '0') : '0000';
+  // eslint-disable-next-line no-control-regex
+  const cleanTitle = meta.problemTitle.replace(/[<>:"/\\|?*\x00-\x1F]/g, '').trim() || 'Solution';
+  return `${paddedNum} - ${cleanTitle}`;
+}
+
+/**
  * Constructs the code target filepath inside the problem folder.
  */
 export function buildGitHubPath(rootFolder: string, meta: SubmissionMetadata): string {

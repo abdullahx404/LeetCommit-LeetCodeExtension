@@ -71,7 +71,7 @@ describe('ToastManager In-Page UI Component', () => {
     expect(container).toBeDefined();
     expect(container.id).toBe('leetcommit-toast-container');
     expect(container.style.position).toBe('fixed');
-    expect(container.getInnerContent()).toContain('Syncing...');
+    expect(container.getInnerContent()).toContain('Syncing');
   });
 
   it('renders success committed toast confirmation', () => {
