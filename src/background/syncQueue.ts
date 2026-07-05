@@ -144,6 +144,8 @@ export class SyncQueue {
 
     const shaToPass = existingCacheItem ? existingCacheItem.fileSha : undefined;
 
+    await GitHubService.ensureRepositoryExists(settings);
+
     const res = await GitHubService.createOrUpdateFile(
       settings,
       codePath,

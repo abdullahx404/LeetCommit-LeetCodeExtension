@@ -35,8 +35,9 @@
       "run_at": "document_idle"
     }
   ],
-  "permissions": ["storage", "alarms"],
-  "host_permissions": ["https://leetcode.com/*", "https://api.github.com/*"],
+  "permissions": ["storage", "alarms", "identity"],
+  "host_permissions": ["https://leetcode.com/*", "https://api.github.com/*", "https://github.com/*"],
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyVG0zvmTdS6TkyD2DI0zF612J+cNrowENEp9xopkTT2c5SmAm0cjNvDMqlHf1j5FIn4YQUkI8vA6ONkLx9uzLS99DUi2o1sBo0lAQNArvwhMnXWf0rhnH73EH9MjUvxQn58rZbfgP4uVwLYHqHtiErF3leUBnK9rcWshENJA4VIVsVzXMRvUJgBZKofBwKw1lvMOopj8uupq9K4aZvcdXrNzei2wNgwQv6/jDkNVmDKz7qiKhWZz3IGWI0G6BbZNZ9lSO7GtndTVfqJNRNXeIicmPY5ZiobYbHvylXcCscgbDgkiRx1n+SZZY40yO61U6RJEXhBGVnAvlQsEkcfyVQIDAQAB",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   }

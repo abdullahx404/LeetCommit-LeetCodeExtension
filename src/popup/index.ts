@@ -36,6 +36,18 @@ async function renderDashboard(): Promise<void> {
       if (langEl) langEl.textContent = stats.lastSyncedProblem.language || 'Code';
       if (timeEl) timeEl.textContent = formatTimeRelative(stats.lastSyncedProblem.timestamp);
     }
+
+    const settings = await StorageService.getSettings();
+    const statusEl = document.getElementById('conn-status');
+    if (statusEl) {
+      if (settings && settings.githubToken) {
+        statusEl.textContent = `Connected (${settings.username || settings.repoOwner})`;
+        statusEl.style.color = '#3fb950';
+      } else {
+        statusEl.textContent = 'Not Connected';
+        statusEl.style.color = '#f85149';
+      }
+    }
   } catch (err) {
     console.error('Failed to render popup stats:', err);
   }

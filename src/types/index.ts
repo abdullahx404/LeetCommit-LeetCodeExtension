@@ -8,6 +8,10 @@ export interface UserSettings {
   repoName: string;
   rootFolder: string; // Default: 'LeetCode'
   autoSyncEnabled: boolean;
+  authType?: 'oauth' | 'pat';
+  oauthToken?: string;
+  username?: string;
+  isPrivate?: boolean;
 }
 
 export interface SubmissionMetadata {

@@ -13,7 +13,17 @@ export class StorageService {
    */
   public static async getSettings(): Promise<UserSettings | null> {
     const data = await chrome.storage.local.get(this.SETTINGS_KEY);
-    return (data[this.SETTINGS_KEY] as UserSettings) || null;
+    const settings = (data[this.SETTINGS_KEY] as UserSettings) || null;
+    if (settings) {
+      if (!settings.repoName) settings.repoName = 'LeetCode';
+      if (!settings.rootFolder) settings.rootFolder = 'LeetCode';
+      if (settings.isPrivate === undefined) settings.isPrivate = false;
+      if (settings.authType === 'oauth' && settings.oauthToken) {
+        settings.githubToken = settings.oauthToken;
+        if (settings.username) settings.repoOwner = settings.username;
+      }
+    }
+    return settings;
   }
 
   /**

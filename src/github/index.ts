@@ -197,4 +197,53 @@ export class GitHubService {
 
     return (await response.json()) as GitHubFileResponse;
   }
+
+  /**
+   * Ensures the target repository exists on GitHub, automatically creating it if it does not.
+   */
+  public static async ensureRepositoryExists(settings: UserSettings): Promise<boolean> {
+    const { owner, name, token } = this.clean(settings);
+    const getEndpoint = `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`;
+
+    try {
+      const res = await this.request(getEndpoint, token, { method: 'GET' });
+      if (res.ok) {
+        return true;
+      }
+      if (res.status !== 404) {
+        return false;
+      }
+    } catch {
+      // Continue to try creating repo if 404
+    }
+
+    const createEndpoint = '/user/repos';
+    const payload = {
+      name: name,
+      description: 'LeetCode accepted solutions automatically synchronized by LeetCommit.',
+      private: settings.isPrivate !== undefined ? settings.isPrivate : false,
+      auto_init: true,
+    };
+
+    const createRes = await this.request(createEndpoint, token, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!createRes.ok) {
+      let errText = createRes.statusText;
+      try {
+        const errJson = (await createRes.json()) as { message?: string };
+        if (errJson.message) errText = errJson.message;
+      } catch {
+        // Fallback
+      }
+      throw new GitHubApiError(createRes.status, `Failed to create repository ${name}: ${errText}`, createEndpoint);
+    }
+
+    return true;
+  }
 }

@@ -11,31 +11,55 @@
     <h1>LeetCommit Sync Configuration</h1>
     <div class="subtitle">Connect your GitHub repository to enable automatic serverless LeetCode synchronization.</div>
 
+    <div id="oauth-section" style="margin-bottom: 24px; padding: 20px; background-color: #1e293b; border-radius: 10px; border: 1px solid #334155; text-align: center;">
+      <div id="oauth-disconnected">
+        <p style="margin-top: 0; font-size: 15px; color: #f8fafc; font-weight: 600;">1-Click Automatic Authentication</p>
+        <p style="font-size: 13px; color: #94a3b8; margin-bottom: 16px;">Connect your GitHub account securely without creating or copying manual tokens.</p>
+        <button type="button" id="connect-oauth-btn" class="btn-primary" style="padding: 12px 28px; font-size: 15px; background-color: #2563eb; border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer;">Connect to GitHub</button>
+      </div>
+      <div id="oauth-connected" style="display: none;">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px;">
+          <span style="display: inline-block; width: 10px; height: 10px; background-color: #10b981; border-radius: 50%;"></span>
+          <span id="connected-user-text" style="font-size: 16px; font-weight: 600; color: #f8fafc;">Connected to GitHub</span>
+        </div>
+        <p style="font-size: 13px; color: #94a3b8; margin-bottom: 16px;">Your accepted LeetCode solutions will automatically sync to your <strong id="target-repo-display" style="color: #38bdf8;">LeetCode</strong> repository.</p>
+        <button type="button" id="disconnect-oauth-btn" class="btn-secondary" style="padding: 8px 16px; font-size: 13px; background-color: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer;">Disconnect Account</button>
+      </div>
+    </div>
+
     <form id="settings-form">
-      <div class="form-group">
-        <label for="repo-url">GitHub Repository URL or Slug</label>
-        <input type="text" id="repo-url" placeholder="https://github.com/abdullahx404/LeetCommit-LeetCodeExtension" required spellcheck="false">
-        <div class="helper-text">Paste your full repository link here. We will automatically extract the owner and repository name.</div>
+      <div class="toggle-group" style="margin-bottom: 24px;">
+        <div class="toggle-label">Repository Visibility (Default: <span id="privacy-status" style="font-weight: 600; color: #38bdf8;">Public</span>)</div>
+        <label class="switch">
+          <input type="checkbox" id="repo-privacy">
+          <span class="slider"></span>
+        </label>
       </div>
 
       <div class="form-group">
-        <label for="github-token">GitHub Personal Access Token</label>
+        <label for="repo-url">GitHub Repository URL or Slug</label>
+        <input type="text" id="repo-url" placeholder="https://github.com/abdullahx404/LeetCode" spellcheck="false">
+        <div class="helper-text">Optional: Paste a custom repository link if you do not want to use the default LeetCode repository.</div>
+      </div>
+
+      <div class="form-group">
+        <label for="github-token">GitHub Personal Access Token (Manual Option)</label>
         <div class="input-wrapper" style="display: flex; gap: 8px;">
-          <input type="password" id="github-token" placeholder="github_pat_XXXXXX" required autocomplete="off" style="flex: 1;">
+          <input type="password" id="github-token" placeholder="github_pat_XXXXXX" autocomplete="off" style="flex: 1;">
           <a href="https://github.com/settings/tokens/new?description=LeetCommit%20Sync&scopes=repo" target="_blank" rel="noopener noreferrer" class="btn-secondary" style="display: flex; align-items: center; text-decoration: none; font-size: 13px; padding: 0 12px; white-space: nowrap; border-radius: 6px;">1-Click Generate Token</a>
         </div>
-        <div class="helper-text">Click the shortcut button above to open GitHub with required permissions pre-filled automatically.</div>
+        <div class="helper-text">If you connected with 1-Click OAuth above, you do not need to paste a token here.</div>
       </div>
 
       <div class="form-row" style="display: flex; gap: 16px;">
         <div class="form-group" style="flex: 1;">
           <label for="repo-owner">Repository Owner</label>
-          <input type="text" id="repo-owner" placeholder="abdullahx404" required spellcheck="false">
+          <input type="text" id="repo-owner" placeholder="abdullahx404" spellcheck="false">
         </div>
 
         <div class="form-group" style="flex: 1;">
           <label for="repo-name">Repository Name</label>
-          <input type="text" id="repo-name" placeholder="LeetCommit-LeetCodeExtension" required spellcheck="false">
+          <input type="text" id="repo-name" placeholder="LeetCode" spellcheck="false">
         </div>
       </div>
 
