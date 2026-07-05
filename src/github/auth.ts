@@ -1,7 +1,8 @@
 import { UserSettings } from '../types';
 import { StorageService } from '../storage';
+import { GitHubService } from './index';
 
-export const GITHUB_OAUTH_CLIENT_ID = 'Ov23liXN11q8Z9y8s765'; // LeetCommit OAuth Client ID
+export const GITHUB_OAUTH_CLIENT_ID = 'Ov23lihTp3ChKn3OGdiE';
 
 export interface GitHubProfile {
   login: string;
@@ -108,11 +109,32 @@ export class GitHubAuthService {
 
               if (token) {
                 const settings = await this.authorizeWithToken(token, 'oauth');
+                await GitHubService.ensureRepositoryExists(settings);
                 return resolve(settings);
               }
 
               if (code) {
-                throw new Error('Authorization code received. Please ensure OAuth App is configured as client-side or use token.');
+                const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                  },
+                  body: JSON.stringify({
+                    client_id: GITHUB_OAUTH_CLIENT_ID,
+                    code: code,
+                    redirect_uri: redirectUri,
+                  }),
+                });
+
+                const tokenData = (await tokenResponse.json()) as { access_token?: string; error?: string; error_description?: string };
+                if (tokenData.access_token) {
+                  const settings = await this.authorizeWithToken(tokenData.access_token, 'oauth');
+                  await GitHubService.ensureRepositoryExists(settings);
+                  return resolve(settings);
+                }
+
+                throw new Error(tokenData.error_description || tokenData.error || 'Failed to exchange OAuth authorization code for access token.');
               }
 
               throw new Error('No access token returned from GitHub authorization flow.');

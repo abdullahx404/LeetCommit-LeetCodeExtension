@@ -133,4 +133,20 @@ describe('GitHubAuthService & Automatic Repository Creation Engine', () => {
       })
     );
   });
+
+  it('exchanges OAuth authorization code for access token when code is returned', async () => {
+    vi.spyOn(chrome.identity, 'launchWebAuthFlow').mockImplementationOnce((_, callback) => {
+      callback('https://gkpnlnaolclnallgnjjbkenfgngebcpl.chromiumapp.org/?code=auth_code_123');
+    });
+
+    const fetchSpy = vi.spyOn(global, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: 'exchanged_token_456' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ login: 'abdullahx404' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 123, name: 'LeetCode' }), { status: 200 }));
+
+    const settings = await GitHubAuthService.authorize();
+    expect(settings.githubToken).toBe('exchanged_token_456');
+    expect(settings.repoOwner).toBe('abdullahx404');
+    expect(fetchSpy.mock.calls[0]?.[0]).toBe('https://github.com/login/oauth/access_token');
+  });
 });
