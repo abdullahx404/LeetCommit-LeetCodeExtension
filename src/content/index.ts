@@ -79,78 +79,137 @@ function extractEditorCode(): string {
  */
 function extractFullProblemMarkdown(title: string, probNum: string, difficulty?: string): string {
   let bodyHtml = '';
-  const descContainer = document.querySelector('div[data-track-load="description_content"], .content__u3I1, [class*="_1l1ma"]');
+  const descContainer = document.querySelector('div[data-track-load="description_content"], .content__u3I1, [class*="_1l1ma"], [class*="elfjS"], [class*="description-content"], [class*="problem-description"], [data-cy="question-content"], [class*="content__"]');
   if (descContainer) {
     bodyHtml = descContainer.innerHTML;
   } else {
+    const allContainers = document.querySelectorAll('div, article, section');
+    for (let i = 0; i < allContainers.length; i++) {
+      const el = allContainers[i];
+      if (el && el.innerHTML.includes('Example 1') && el.innerHTML.includes('Constraints') && el.children.length > 1 && el.textContent && el.textContent.length < 15000) {
+        bodyHtml = el.innerHTML;
+        break;
+      }
+    }
+  }
+
+  if (!bodyHtml) {
     const metaDesc = document.querySelector('meta[name="description"]');
     bodyHtml = metaDesc ? metaDesc.getAttribute('content') || '' : '';
   }
 
   let text = bodyHtml
     .replace(/<sup[^>]*>(.*?)<\/sup>/igs, '^$1')
+    .replace(/<sub[^>]*>(.*?)<\/sub>/igs, '_$1')
+    .replace(/<code>(.*?)<\/code>/igs, '`$1`')
+    .replace(/<(?:strong|b)[^>]*>(.*?)<\/(?:strong|b)>/igs, '**$1**')
     .replace(/<(?:em|i)[^>]*>(.*?)<\/(?:em|i)>/igs, '*$1*')
-    .replace(/<pre[^>]*>(.*?)<\/pre>/igs, (_, inner: string) => {
-      const clean = inner
-        .replace(/<br\s*\/?>/ig, '\n')
-        .replace(/<\/(?:p|div|li)>/ig, '\n')
-        .replace(/<(?:strong|b)[^>]*>(.*?)<\/(?:strong|b)>/ig, '**$1**')
-        .replace(/<code[^>]*>(.*?)<\/code>/ig, '`$1`')
-        .replace(/<[^>]+>/g, '')
-        .replace(/&nbsp;/g, ' ')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&amp;/g, '&');
-
-      const lines = clean
-        .split('\n')
-        .map((l) => l.trim())
-        .filter((l) => Boolean(l) && l !== '**' && l !== '****');
-
-      const formattedLines = lines.map((line) => {
-        const match = /^(?:(?:\*\*|strong|b|\s)*)?(Input|Output|Explanation)(?:(?:\*\*|strong|b|\s)*)?\s*:?\s*(.*)/i.exec(line);
-        if (match && match[1] && match[2] !== undefined) {
-          const kw = match[1].charAt(0).toUpperCase() + match[1].slice(1).toLowerCase();
-          const valClean = match[2].replace(/[`*]/g, '').trim();
-          const valCode = valClean ? ` \`${valClean}\`` : '';
-          return `**${kw}:**${valCode}`;
-        }
-        return line;
-      });
-
-      return '\n\n' + formattedLines.map((l) => (l.startsWith('>') ? l : `> ${l}`)).join('\n> \n') + '\n\n';
-    })
+    .replace(/<li[^>]*>(.*?)<\/li>/igs, '\n* $1\n')
     .replace(/<br\s*\/?>/ig, '\n')
-    .replace(/<\/(?:p|div|ul|ol|h[1-6])>/ig, '\n\n')
-    .replace(/<(?:strong|b)[^>]*>(.*?)<\/(?:strong|b)>/ig, '**$1**')
-    .replace(/<code[^>]*>(.*?)<\/code>/ig, '`$1`')
-    .replace(/<li[^>]*>(.*?)<\/li>/ig, '\n\n* $1\n\n')
+    .replace(/<\/(?:p|div|pre|ul|ol|h[1-6])>/ig, '\n\n')
     .replace(/<[^>]+>/g, '')
     .replace(/&nbsp;/g, ' ')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&');
-
-  text = text.replace(/`+/g, '`').replace(/`\s*`([^`]+)`\s*`/g, '`$1`');
+    .replace(/&amp;/g, '&')
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"');
 
   text = text
-    .replace(/(?:\*\*|###\s*)?(Example\s+\d+|Constraints|Follow-up)(?:\*\*)?\s*:/ig, '\n\n### $1:\n\n')
-    .replace(/\*\*\s*\*\*/g, '');
+    .replace(/(?:\*\*|###|#|\b)?Example\s+(\d+)\s*:?(?:\*\*)?/ig, '\n\n### Example $1:\n\n')
+    .replace(/(?:\*\*|###|#|\b)?Constraints\s*:?(?:\*\*)?/ig, '\n\n### Constraints:\n\n')
+    .replace(/(?:\*\*|###|#|\b)?Follow[-\s]*up\s*:?(?:\*\*)?/ig, '\n\n### Follow-up:\n\n')
+    .replace(/(?:\*\*|strong|b|\b)?Input\s*:?(?:\*\*)?\s*/ig, '\n\nINPUT_TOKEN:')
+    .replace(/(?:\*\*|strong|b|\b)?Output\s*:?(?:\*\*)?\s*/ig, '\n\nOUTPUT_TOKEN:')
+    .replace(/(?:\*\*|strong|b|\b)?Explanation\s*:?(?:\*\*)?\s*/ig, '\n\nEXPLANATION_TOKEN:');
 
-  const finalLines = text
-    .split('\n')
-    .map((l) => l.trim())
-    .filter((l) => l !== '**' && l !== '****' && l !== '`' && l !== '``' && l !== '*');
+  const rawLines = text.split('\n').map((l) => l.trim()).filter((l) => Boolean(l) && l !== '**' && l !== '****' && l !== '`' && l !== '``' && l !== '*');
 
-  text = finalLines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  let inExample = false;
+  let inConstraints = false;
+  const formattedLines: string[] = [];
+  let exampleBlockLines: string[] = [];
 
-  if (!text) {
-    text = 'Problem description not available.';
+  const flushExampleBlock = () => {
+    if (exampleBlockLines.length > 0) {
+      formattedLines.push(exampleBlockLines.join('\n> \n'));
+      exampleBlockLines = [];
+    }
+  };
+
+  for (let i = 0; i < rawLines.length; i++) {
+    const line = rawLines[i] || '';
+
+    if (line.startsWith('### Example')) {
+      flushExampleBlock();
+      inExample = true;
+      inConstraints = false;
+      formattedLines.push(`\n${line}`);
+      continue;
+    }
+    if (line.startsWith('### Constraints:')) {
+      flushExampleBlock();
+      inExample = false;
+      inConstraints = true;
+      formattedLines.push(`\n${line}`);
+      continue;
+    }
+    if (line.startsWith('### Follow-up:')) {
+      flushExampleBlock();
+      inExample = false;
+      inConstraints = false;
+      formattedLines.push(`\n${line}`);
+      continue;
+    }
+
+    if (line.startsWith('INPUT_TOKEN:')) {
+      inExample = true;
+      const val = line.replace('INPUT_TOKEN:', '').replace(/[`*]/g, '').trim();
+      exampleBlockLines.push(`> **Input:** \`${val}\``);
+      continue;
+    }
+    if (line.startsWith('OUTPUT_TOKEN:')) {
+      inExample = true;
+      const val = line.replace('OUTPUT_TOKEN:', '').replace(/[`*]/g, '').trim();
+      exampleBlockLines.push(`> **Output:** \`${val}\``);
+      continue;
+    }
+    if (line.startsWith('EXPLANATION_TOKEN:')) {
+      inExample = true;
+      const val = line.replace('EXPLANATION_TOKEN:', '').replace(/[`*]/g, '').trim();
+      exampleBlockLines.push(`> **Explanation:** \`${val}\``);
+      continue;
+    }
+
+    if (inExample) {
+      const cleanLine = line.replace(/^[>*-\s]+/, '').replace(/[`*]/g, '').trim();
+      if (cleanLine) {
+        exampleBlockLines.push(`> \`${cleanLine}\``);
+      }
+      continue;
+    }
+
+    if (inConstraints) {
+      const cleanLi = line.replace(/^[>*-\s•]+/, '').replace(/[`*]/g, '').trim();
+      if (cleanLi) {
+        formattedLines.push(`* \`${cleanLi}\``);
+      }
+      continue;
+    }
+
+    formattedLines.push(line);
+  }
+
+  flushExampleBlock();
+
+  let bodyMarkdown = formattedLines.join('\n\n').replace(/\n{3,}/g, '\n\n').trim();
+  if (!bodyMarkdown) {
+    bodyMarkdown = 'Problem description not available.';
   }
 
   const numPrefix = probNum ? `${Number(probNum)}. ` : '';
   const diffPill = difficulty ? `\`${difficulty}\`\n\n` : '';
-  return `# ${numPrefix}${title}\n\n${diffPill}${text}\n`;
+  return `# ${numPrefix}${title}\n\n${diffPill}${bodyMarkdown}\n`;
 }
 
 /**
