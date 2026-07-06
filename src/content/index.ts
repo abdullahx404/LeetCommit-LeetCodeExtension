@@ -116,6 +116,10 @@ function extractFullProblemMarkdown(title: string, probNum: string, difficulty?:
     .replace(/&quot;/g, '"');
 
   text = text
+    .replace(/Can you solve this real interview question\?[^-\n]*-\s*/ig, '')
+    .replace(/Can you solve this real interview question\?\s*/ig, '');
+
+  text = text
     .replace(/(?:\*\*|###|#|\b)?Example\s+(\d+)\s*:?(?:\*\*)?/ig, '\n\n### Example $1:\n\n')
     .replace(/(?:\*\*|###|#|\b)?Constraints\s*:?(?:\*\*)?/ig, '\n\n### Constraints:\n\n')
     .replace(/(?:\*\*|###|#|\b)?Follow[-\s]*up\s*:?(?:\*\*)?/ig, '\n\n### Follow-up:\n\n')
