@@ -3,6 +3,7 @@ import { StorageService } from '../storage';
 import { GitHubService } from './index';
 
 export const GITHUB_OAUTH_CLIENT_ID = 'Ov23lihTp3ChKn3OGdiE';
+export const GITHUB_OAUTH_CLIENT_SECRET = ''; // Paste your generated Client Secret from GitHub here
 
 export interface GitHubProfile {
   login: string;
@@ -122,6 +123,7 @@ export class GitHubAuthService {
                   },
                   body: JSON.stringify({
                     client_id: GITHUB_OAUTH_CLIENT_ID,
+                    client_secret: GITHUB_OAUTH_CLIENT_SECRET,
                     code: code,
                     redirect_uri: redirectUri,
                   }),
@@ -134,7 +136,8 @@ export class GitHubAuthService {
                   return resolve(settings);
                 }
 
-                throw new Error(tokenData.error_description || tokenData.error || 'Failed to exchange OAuth authorization code for access token.');
+                const githubError = tokenData.error_description || tokenData.error || 'Unknown error';
+                throw new Error(`Failed to exchange OAuth code: ${githubError}. Please generate a Client Secret in your GitHub OAuth App settings and paste it into GITHUB_OAUTH_CLIENT_SECRET in src/github/auth.ts.`);
               }
 
               throw new Error('No access token returned from GitHub authorization flow.');
