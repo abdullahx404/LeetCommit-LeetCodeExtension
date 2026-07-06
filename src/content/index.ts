@@ -156,27 +156,33 @@ function extractFullProblemMarkdown(title: string, probNum: string, difficulty?:
 /**
  * Detects programming language strictly validated against known languages.
  */
-function detectLanguage(partialLang?: string): string {
-  if (partialLang) {
-    if (partialLang === 'cpp' || partialLang.toLowerCase() === 'c++') return 'C++';
-    if (partialLang === 'java') return 'Java';
-    if (partialLang === 'python' || partialLang === 'python3') return 'Python';
-    if (partialLang === 'c') return 'C';
-    if (partialLang === 'csharp' || partialLang === 'cs') return 'C#';
-    if (partialLang === 'javascript' || partialLang === 'js') return 'JavaScript';
-    if (partialLang === 'typescript' || partialLang === 'ts') return 'TypeScript';
-    if (partialLang === 'php') return 'PHP';
-    if (partialLang === 'swift') return 'Swift';
-    if (partialLang === 'kotlin' || partialLang === 'kt') return 'Kotlin';
-    if (partialLang === 'dart') return 'Dart';
-    if (partialLang === 'golang' || partialLang === 'go') return 'Go';
-    if (partialLang === 'ruby' || partialLang === 'rb') return 'Ruby';
-    if (partialLang === 'scala') return 'Scala';
-    if (partialLang === 'rust' || partialLang === 'rs') return 'Rust';
-    if (partialLang === 'racket') return 'Racket';
-    if (partialLang === 'erlang') return 'Erlang';
-    if (partialLang === 'elixir') return 'Elixir';
-  }
+function detectLanguage(partialLang?: string, codeToCheck?: string): string {
+  const checkStr = (str?: string): string | null => {
+    if (!str) return null;
+    const s = str.toLowerCase().trim();
+    if (s === 'cpp' || s === 'c++') return 'C++';
+    if (s === 'java' && !s.includes('script')) return 'Java';
+    if (s.includes('python') || s === 'py' || s === 'python3') return 'Python';
+    if (s === 'c') return 'C';
+    if (s === 'csharp' || s === 'cs' || s === 'c#') return 'C#';
+    if (s.includes('javascript') || s === 'js') return 'JavaScript';
+    if (s.includes('typescript') || s === 'ts') return 'TypeScript';
+    if (s.includes('php')) return 'PHP';
+    if (s.includes('swift')) return 'Swift';
+    if (s.includes('kotlin') || s === 'kt') return 'Kotlin';
+    if (s.includes('dart')) return 'Dart';
+    if (s.includes('golang') || s === 'go') return 'Go';
+    if (s.includes('ruby') || s === 'rb') return 'Ruby';
+    if (s.includes('scala')) return 'Scala';
+    if (s.includes('rust') || s === 'rs') return 'Rust';
+    if (s.includes('racket')) return 'Racket';
+    if (s.includes('erlang')) return 'Erlang';
+    if (s.includes('elixir')) return 'Elixir';
+    return null;
+  };
+
+  const fromPartial = checkStr(partialLang);
+  if (fromPartial) return fromPartial;
 
   try {
     const win = window as unknown as { monaco?: { editor?: { getModels?: () => Array<{ getLanguageId: () => string; getValue?: () => string }> } } };
@@ -184,15 +190,8 @@ function detectLanguage(partialLang?: string): string {
       const models = win.monaco.editor.getModels();
       for (const model of models) {
         if (model && (!model.getValue || model.getValue().trim().length > 10)) {
-          const langId = model.getLanguageId();
-          if (langId === 'cpp') return 'C++';
-          if (langId === 'python') return 'Python';
-          if (langId === 'java') return 'Java';
-          if (langId === 'typescript') return 'TypeScript';
-          if (langId === 'golang' || langId === 'go') return 'Go';
-          if (langId === 'rust') return 'Rust';
-          if (langId === 'csharp') return 'C#';
-          if (langId && langId !== 'plaintext' && langId !== 'json') return langId;
+          const fromMonaco = checkStr(model.getLanguageId());
+          if (fromMonaco) return fromMonaco;
         }
       }
     }
@@ -200,28 +199,24 @@ function detectLanguage(partialLang?: string): string {
     // Ignore Monaco extraction failure
   }
 
-  const langBtn = document.querySelector('button[id*="headlessui-listbox-button"], [data-cy="lang-select"], .select-button, [class*="lang-select"]');
-  if (langBtn && langBtn.textContent) {
-    const text = langBtn.textContent.trim();
-    if (text.includes('C++')) return 'C++';
-    if (text.includes('Java') && !text.includes('Script')) return 'Java';
-    if (text.includes('Python')) return 'Python';
-    if (text === 'C') return 'C';
-    if (text.includes('C#')) return 'C#';
-    if (text.includes('JavaScript')) return 'JavaScript';
-    if (text.includes('TypeScript')) return 'TypeScript';
-    if (text.includes('PHP')) return 'PHP';
-    if (text.includes('Swift')) return 'Swift';
-    if (text.includes('Kotlin')) return 'Kotlin';
-    if (text.includes('Dart')) return 'Dart';
-    if (text.includes('Go')) return 'Go';
-    if (text.includes('Ruby')) return 'Ruby';
-    if (text.includes('Scala')) return 'Scala';
-    if (text.includes('Rust')) return 'Rust';
-    if (text.includes('Racket')) return 'Racket';
-    if (text.includes('Erlang')) return 'Erlang';
-    if (text.includes('Elixir')) return 'Elixir';
+  const langSelectors = document.querySelectorAll('button, div[role="button"], span, [id*="radix-"], [id*="headlessui-"], .select-button, [data-cy="lang-select"]');
+  for (let i = 0; i < langSelectors.length; i++) {
+    const el = langSelectors[i];
+    if (el && el.textContent) {
+      const txt = el.textContent.trim();
+      const fromDom = checkStr(txt);
+      if (fromDom) return fromDom;
+    }
   }
+
+  const code = codeToCheck || '';
+  if (code.includes('def ') && code.includes('self')) return 'Python';
+  if (code.includes('public class ') || code.includes('public static void main')) return 'Java';
+  if (code.includes('#include') || code.includes('std::') || code.includes('vector<') || (code.includes('Solution {') && code.includes('public:'))) return 'C++';
+  if (code.includes('function ') || (code.includes('const ') && code.includes('=>') && !code.includes(':'))) return 'JavaScript';
+  if (code.includes(': number') || code.includes(': string') || code.includes(': boolean')) return 'TypeScript';
+  if (code.includes('fn ') && code.includes('->')) return 'Rust';
+  if (code.includes('func ') && code.includes('string')) return 'Go';
 
   return 'Code';
 }
@@ -240,13 +235,9 @@ function extractPageMetadata(partialCode?: string, partialLang?: string): Submis
   if (heading && heading.textContent) {
     const fullText = heading.textContent.trim();
     const match = /^(\d+)\.\s*(.+)$/.exec(fullText);
-    if (match) {
-      const numPart = match[1];
-      const titlePart = match[2];
-      if (numPart && titlePart) {
-        probNum = numPart;
-        title = titlePart.trim();
-      }
+    if (match && match[1] && match[2]) {
+      probNum = match[1];
+      title = match[2].trim();
     } else {
       title = fullText;
     }
@@ -260,27 +251,68 @@ function extractPageMetadata(partialCode?: string, partialLang?: string): Submis
     }
   }
 
+  if (!probNum) {
+    const allSpans = document.querySelectorAll('span, div, a, h1, h2, h3');
+    for (let i = 0; i < allSpans.length; i++) {
+      const el = allSpans[i];
+      if (el && el.children.length === 0 && el.textContent) {
+        const txt = el.textContent.trim();
+        const m = /^(\d+)\.\s*(.+)$/.exec(txt);
+        if (m && m[1] && m[2] && (m[2].toLowerCase() === title.toLowerCase() || slug.replace(/-/g, ' ').toLowerCase().includes(m[2].toLowerCase()))) {
+          probNum = m[1];
+          title = m[2].trim();
+          break;
+        }
+        if (/^\d+\.$/.test(txt)) {
+          probNum = txt.replace('.', '').trim();
+          break;
+        }
+      }
+    }
+  }
+
   let difficulty: 'Easy' | 'Medium' | 'Hard' = 'Medium';
   const diffBadge = document.querySelector('[class*="text-difficulty"], [data-difficulty], .text-olive, .text-yellow, .text-pink, [class*="difficulty"]');
   if (diffBadge && diffBadge.textContent) {
     difficulty = normalizeDifficulty(diffBadge.textContent);
   } else {
-    const bodyText = document.body?.innerText || '';
-    if (/\bEasy\b/.test(bodyText) && !/\bMedium\b/.test(bodyText) && !/\bHard\b/.test(bodyText)) {
-      difficulty = 'Easy';
-    } else if (/\bHard\b/.test(bodyText) && !/\bEasy\b/.test(bodyText) && !/\bMedium\b/.test(bodyText)) {
-      difficulty = 'Hard';
+    const allBadges = document.querySelectorAll('div, span, p, button, a');
+    for (let i = 0; i < allBadges.length; i++) {
+      const el = allBadges[i];
+      if (el && el.children.length === 0 && el.textContent) {
+        const txt = el.textContent.trim();
+        if (txt === 'Easy' || txt === 'Medium' || txt === 'Hard') {
+          difficulty = txt;
+          break;
+        }
+      }
     }
   }
 
-  if (probNum === '1' || title.toLowerCase() === 'two sum' || slug === 'two-sum') {
-    probNum = '1';
-    title = 'Two Sum';
+  const classicMap: Record<string, { num: string; title: string; diff: 'Easy' | 'Medium' | 'Hard' }> = {
+    'two-sum': { num: '1', title: 'Two Sum', diff: 'Easy' },
+    'add-two-numbers': { num: '2', title: 'Add Two Numbers', diff: 'Medium' },
+    'longest-substring-without-repeating-characters': { num: '3', title: 'Longest Substring Without Repeating Characters', diff: 'Medium' },
+    'median-of-two-sorted-arrays': { num: '4', title: 'Median of Two Sorted Arrays', diff: 'Hard' },
+    'longest-palindromic-substring': { num: '5', title: 'Longest Palindromic Substring', diff: 'Medium' },
+    'zigzag-conversion': { num: '6', title: 'Zigzag Conversion', diff: 'Medium' },
+    'reverse-integer': { num: '7', title: 'Reverse Integer', diff: 'Medium' },
+    'string-to-integer-atoi': { num: '8', title: 'String to Integer (atoi)', diff: 'Medium' },
+    'palindrome-number': { num: '9', title: 'Palindrome Number', diff: 'Easy' },
+  };
+
+  if (classicMap[slug]) {
+    probNum = classicMap[slug].num;
+    title = classicMap[slug].title;
+    difficulty = classicMap[slug].diff;
+  } else if (title.toLowerCase() === 'palindrome number') {
+    probNum = '9';
+    title = 'Palindrome Number';
     difficulty = 'Easy';
   }
 
-  const language = detectLanguage(partialLang);
   const rawCode = (partialCode && partialCode.trim().length > 10) ? partialCode : extractEditorCode();
+  const language = detectLanguage(partialLang, rawCode);
   const extension = getFileExtension(language);
   const readmeContent = extractFullProblemMarkdown(title, probNum, difficulty);
 
@@ -335,7 +367,8 @@ function triggerSync(meta: SubmissionMetadata): void {
     return;
   }
 
-  console.warn('Syncing accepted LeetCode submission to GitHub:', meta.problemTitle);
+  // eslint-disable-next-line no-console
+  console.log('Syncing accepted LeetCode submission to GitHub:', meta.problemTitle);
   ToastManager.showUploading(meta.problemTitle);
 
   try {
@@ -356,10 +389,11 @@ if (chrome?.runtime?.id) {
       const msg = message as { type: string; payload?: { status?: string; title?: string; error?: string } };
       if (msg.type === 'LEETCOMMIT_SYNC_STATUS' && msg.payload) {
         if (msg.payload.status === 'SUCCESS' || msg.payload.status === 'SKIPPED') {
-          console.warn(`LeetCommit sync confirmed (${msg.payload.status}):`, msg.payload.title);
+          // eslint-disable-next-line no-console
+          console.log(`LeetCommit sync confirmed (${msg.payload.status}):`, msg.payload.title);
           ToastManager.showSuccess(msg.payload.title || 'Solution');
         } else if (msg.payload.status === 'ERROR') {
-          console.warn('LeetCommit sync failed:', msg.payload.error);
+          console.error('LeetCommit sync failed:', msg.payload.error);
           ToastManager.showError(msg.payload.error || 'Upload failed');
         }
       }

@@ -10,6 +10,11 @@ global.chrome = {
         Object.assign(mockStorage, obj);
         return Promise.resolve();
       }),
+      remove: vi.fn((key: string | string[]) => {
+        const keys = Array.isArray(key) ? key : [key];
+        for (const k of keys) delete mockStorage[k];
+        return Promise.resolve();
+      }),
       clear: vi.fn(() => {
         for (const prop of Object.keys(mockStorage)) delete mockStorage[prop];
         return Promise.resolve();

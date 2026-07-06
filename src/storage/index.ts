@@ -83,10 +83,10 @@ export class StorageService {
   }
 
   /**
-   * Completely clears all stored extension data.
+   * Clears authentication and configuration settings without wiping solved problem cache or stats.
    */
   public static async clearAll(): Promise<void> {
-    await chrome.storage.local.clear();
+    await chrome.storage.local.remove(this.SETTINGS_KEY);
   }
 
   private static readonly OFFLINE_KEY = 'offline_queue';

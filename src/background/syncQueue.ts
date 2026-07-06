@@ -157,7 +157,7 @@ export class SyncQueue {
     const newSha = res.content ? res.content.sha : '';
     let readmeSha = existingCacheItem?.readmeSha;
 
-    if (meta.readmeContent) {
+    if (meta.readmeContent && !existingCacheItem) {
       try {
         const docFileName = buildProblemFileName(meta);
         const docPath = `${folderPath}/${docFileName}.md`;
@@ -193,22 +193,24 @@ export class SyncQueue {
     await StorageService.updateCacheProblem(updatedProblem);
     await this.updateSyncStats(meta);
 
-    try {
-      const latestStats = await StorageService.getStats();
-      const latestCache = await StorageService.getCache();
-      const mdContent = ReadmeGenerator.generate(latestStats, latestCache);
-      const base64Md = utf8ToBase64(mdContent);
-      const cleanRoot = settings.rootFolder.replace(/^\/+|\/+$/g, '').trim();
-      const readmeIndexPath = cleanRoot && cleanRoot.toLowerCase() !== 'leetcode' ? `${cleanRoot}/README.md` : 'README.md';
+    if (!existingCacheItem) {
+      try {
+        const latestStats = await StorageService.getStats();
+        const latestCache = await StorageService.getCache();
+        const mdContent = ReadmeGenerator.generate(latestStats, latestCache);
+        const base64Md = utf8ToBase64(mdContent);
+        const cleanRoot = settings.rootFolder.replace(/^\/+|\/+$/g, '').trim();
+        const readmeIndexPath = cleanRoot && cleanRoot.toLowerCase() !== 'leetcode' ? `${cleanRoot}/README.md` : 'README.md';
 
-      await GitHubService.createOrUpdateFile(
-        settings,
-        readmeIndexPath,
-        base64Md,
-        'Update repository README index'
-      );
-    } catch (readmeErr) {
-      console.error('Failed to update repository README index:', readmeErr);
+        await GitHubService.createOrUpdateFile(
+          settings,
+          readmeIndexPath,
+          base64Md,
+          'Update repository README index'
+        );
+      } catch (readmeErr) {
+        console.error('Failed to update repository README index:', readmeErr);
+      }
     }
 
     console.warn(`Successfully synchronized ${meta.problemTitle} to GitHub.`);
@@ -221,10 +223,10 @@ export class SyncQueue {
     const problems = Object.values(cache);
     const stats: SyncStats = await StorageService.getStats();
 
-    stats.totalSolved = problems.length;
-    stats.easyCount = problems.filter((p) => p.difficulty === 'Easy').length;
-    stats.mediumCount = problems.filter((p) => p.difficulty === 'Medium').length;
-    stats.hardCount = problems.filter((p) => p.difficulty === 'Hard').length;
+    stats.totalSolved = Math.max(stats.totalSolved || 0, problems.length);
+    stats.easyCount = Math.max(stats.easyCount || 0, problems.filter((p) => p.difficulty === 'Easy').length);
+    stats.mediumCount = Math.max(stats.mediumCount || 0, problems.filter((p) => p.difficulty === 'Medium').length);
+    stats.hardCount = Math.max(stats.hardCount || 0, problems.filter((p) => p.difficulty === 'Hard').length);
 
     stats.lastSyncedProblem = {
       number: meta.problemNumber,

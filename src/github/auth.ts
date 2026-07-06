@@ -3,7 +3,7 @@ import { StorageService } from '../storage';
 import { GitHubService } from './index';
 
 export const GITHUB_OAUTH_CLIENT_ID = 'Ov23lihTp3ChKn3OGdiE';
-export const GITHUB_OAUTH_CLIENT_SECRET = ''; // Paste your generated Client Secret from GitHub here
+export const GITHUB_OAUTH_CLIENT_SECRET = 'a21758f1456a6c28d2a139bd7c64db58bfe23086';
 
 export interface GitHubProfile {
   login: string;
