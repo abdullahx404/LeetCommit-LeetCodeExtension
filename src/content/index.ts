@@ -123,9 +123,9 @@ function extractFullProblemMarkdown(title: string, probNum: string, difficulty?:
     .replace(/(?:\*\*|###|#|\b)?Example\s+(\d+)\s*:?(?:\*\*)?/ig, '\n\n### Example $1:\n\n')
     .replace(/(?:\*\*|###|#|\b)?Constraints\s*:?(?:\*\*)?/ig, '\n\n### Constraints:\n\n')
     .replace(/(?:\*\*|###|#|\b)?Follow[-\s]*up\s*:?(?:\*\*)?/ig, '\n\n### Follow-up:\n\n')
-    .replace(/(?:\*\*|strong|b|\b)?Input\s*:?(?:\*\*)?\s*/ig, '\n\nINPUT_TOKEN:')
-    .replace(/(?:\*\*|strong|b|\b)?Output\s*:?(?:\*\*)?\s*/ig, '\n\nOUTPUT_TOKEN:')
-    .replace(/(?:\*\*|strong|b|\b)?Explanation\s*:?(?:\*\*)?\s*/ig, '\n\nEXPLANATION_TOKEN:');
+    .replace(/(?:\*\*|strong|b|\b)?Input\s*:\s*(?:\*\*)?\s*/ig, '\n\nINPUT_TOKEN:')
+    .replace(/(?:\*\*|strong|b|\b)?Output\s*:\s*(?:\*\*)?\s*/ig, '\n\nOUTPUT_TOKEN:')
+    .replace(/(?:\*\*|strong|b|\b)?Explanation\s*:\s*(?:\*\*)?\s*/ig, '\n\nEXPLANATION_TOKEN:');
 
   const rawLines = text.split('\n').map((l) => l.trim()).filter((l) => Boolean(l) && l !== '**' && l !== '****' && l !== '`' && l !== '``' && l !== '*');
 
@@ -167,21 +167,30 @@ function extractFullProblemMarkdown(title: string, probNum: string, difficulty?:
     }
 
     if (line.startsWith('INPUT_TOKEN:')) {
-      inExample = true;
       const val = line.replace('INPUT_TOKEN:', '').replace(/[`*]/g, '').trim();
-      exampleBlockLines.push(`> **Input:** \`${val}\``);
+      if (inExample) {
+        exampleBlockLines.push(`> **Input:** \`${val}\``);
+      } else {
+        formattedLines.push(`**Input:** ${val}`);
+      }
       continue;
     }
     if (line.startsWith('OUTPUT_TOKEN:')) {
-      inExample = true;
       const val = line.replace('OUTPUT_TOKEN:', '').replace(/[`*]/g, '').trim();
-      exampleBlockLines.push(`> **Output:** \`${val}\``);
+      if (inExample) {
+        exampleBlockLines.push(`> **Output:** \`${val}\``);
+      } else {
+        formattedLines.push(`**Output:** ${val}`);
+      }
       continue;
     }
     if (line.startsWith('EXPLANATION_TOKEN:')) {
-      inExample = true;
       const val = line.replace('EXPLANATION_TOKEN:', '').replace(/[`*]/g, '').trim();
-      exampleBlockLines.push(`> **Explanation:** \`${val}\``);
+      if (inExample) {
+        exampleBlockLines.push(`> **Explanation:** \`${val}\``);
+      } else {
+        formattedLines.push(`**Explanation:** ${val}`);
+      }
       continue;
     }
 
