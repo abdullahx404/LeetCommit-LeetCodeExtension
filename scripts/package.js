@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 const distDir = path.resolve('dist');
-const zipPath = path.resolve('LeetCommit-v1.0.0.zip');
+const zipPath = path.resolve('LeetCommit.zip');
 
 if (!fs.existsSync(distDir)) {
   console.error('Error: dist directory not found. Run npm run build first.');
@@ -17,7 +17,7 @@ try {
 
   // Windows PowerShell native archive command
   execSync(`powershell Compress-Archive -Path "${distDir}\\*" -DestinationPath "${zipPath}" -Force`);
-  console.log('Successfully created production release archive: LeetCommit-v1.0.0.zip');
+  console.log('Successfully created production release archive: LeetCommit.zip');
 } catch (err) {
   console.error('Failed to package extension archive:', err);
   process.exit(1);

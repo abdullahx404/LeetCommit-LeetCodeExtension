@@ -11,6 +11,30 @@ Unlike other tools that rely on intermediate third-party backend servers or webh
 
 ---
 
+## How to Setup & Install
+
+We provide two simple installation paths depending on whether you are a regular user or a developer:
+
+### 1. Regular Users (No Coding Required!)
+1. **Download & Unzip**: Go to our [GitHub Releases page](https://github.com/abdullahx404/LeetCommit-LeetCodeExtension/releases) and download **`LeetCommit.zip`**. Extract (unzip) the archive on your computer.
+2. **Open Chrome Extensions**: Open Google Chrome (or Microsoft Edge) and type `chrome://extensions` into your address bar.
+3. **Enable Developer Mode**: Turn on the **Developer mode** toggle switch in the top-right corner of the extensions page.
+4. **Load Unpacked**: Click the **Load unpacked** button in the top-left corner and select the **extracted folder** (the folder created when you unzipped `LeetCommit.zip`).
+5. **Authorize & Sync**: Pin the LeetCommit icon to your browser toolbar, click it to open Settings, authorize your GitHub account, and you're good to go! Every time you pass a LeetCode problem, it will sync automatically!
+
+### 2. Developers (Building from Source)
+If you want to contribute to or build the source code from scratch:
+1. **Clone & Install**:
+   ```bash
+   git clone https://github.com/abdullahx404/LeetCommit-LeetCodeExtension.git
+   cd LeetCommit-LeetCodeExtension
+   npm ci
+   ```
+2. **Compile Production Bundle**: Run `npm run build` to generate the compiled `/dist` directory.
+3. **Load in Chrome**: Follow steps 2–5 above, but select your locally generated `/dist` folder when clicking **Load unpacked**.
+
+---
+
 ## Key Features
 
 * **Instant Automatic Sync**: Detects accepted LeetCode submissions in real-time via network request monitoring and DOM mutation observers.
@@ -25,20 +49,11 @@ Unlike other tools that rely on intermediate third-party backend servers or webh
       └── 0004 - Median of Two Sorted Arrays.java
   ```
 * **Dynamic README Index**: Automatically creates and updates a repository dashboard table showing total solved counts across Easy, Medium, and Hard difficulties.
-* **Zero Third-Party Tracking**: Your GitHub Fine-Grained Personal Access Token is encrypted/stored strictly in Chrome local storage (chrome.storage.local). Zero telemetry or external analytics.
+* **Zero Third-Party Tracking**: Your GitHub Fine-Grained Personal Access Token is encrypted/stored strictly in Chrome local storage (`chrome.storage.local`). Zero telemetry or external analytics.
 * **Smart Deduplication**: Computes code hashes to prevent redundant uploads when submitting duplicate solutions.
 * **Sleek Dark Mode UI**: Includes an intuitive Popup dashboard showing sync statistics and a comprehensive Settings configuration interface.
 * **Multi-Language Support**: Fully extracts and categorizes solutions across 9 core programming languages:
   * C++ (.cpp), Java (.java), Python (.py), JavaScript (.js), TypeScript (.ts), Go (.go), Rust (.rs), C# (.cs), Kotlin (.kt).
-
----
-
-## How to Use (Quick Setup Guide)
-
-1. **Install Extension**: Load the `/dist` folder in `chrome://extensions` with Developer Mode enabled.
-2. **Open Settings**: Click the LeetCommit extension icon in your toolbar and click **Settings**.
-3. **Connect Repository**: Click **1-Click Generate Token** shortcut, paste your full GitHub Repository URL and token.
-4. **Solve & Sync**: Submit any passing solution on LeetCode. Your code, runtime ms, and space MB will upload automatically!
 
 ---
 
@@ -54,7 +69,7 @@ LeetCommit operates on a direct, client-to-API communication model without inter
 
 2. **Chrome Extension Core (Orchestration & Storage Layer)**
    * Content Script transmits structured submission payloads to the ephemeral Background Service Worker via Chrome runtime message bus.
-   * Storage Service securely manages user configuration, authentication credentials, and local SHA caching inside chrome.storage.local.
+   * Storage Service securely manages user configuration, authentication credentials, and local SHA caching inside `chrome.storage.local`.
 
 3. **GitHub REST API Client (Remote Sync Layer)**
    * Background Service Worker verifies local cache and resolves remote file SHAs to prevent collision conflicts.
@@ -62,40 +77,12 @@ LeetCommit operates on a direct, client-to-API communication model without inter
 
 ### Modular Codebase Organization
 
-The codebase is structured into decoupled domain modules under src/:
+The codebase is structured into decoupled domain modules under `src/`:
 * `src/background/`: Background service worker managing asynchronous sync queues and README generation.
 * `src/content/`: DOM observers and network interceptors injected into LeetCode problem pages.
 * `src/github/`: Type-safe REST API wrappers handling SHA resolution and rate limit backoffs.
 * `src/storage/`: Typed wrappers around Chrome local storage caching problem metadata.
 * `src/popup/` & `src/settings/`: Dark mode user interfaces for status inspection and token management.
-
----
-
-## Local Setup & Chrome Installation
-
-### 1. Prerequisites
-* Node.js (v18+ recommended)
-* npm (v9+)
-* Google Chrome
-
-### 2. Build the Extension
-```bash
-# Clone the repository
-git clone https://github.com/abdullahx404/LeetCommit-LeetCodeExtension.git
-cd LeetCommit-LeetCodeExtension
-
-# Install dependencies
-npm ci
-
-# Compile production bundle
-npm run build
-```
-
-### 3. Load in Google Chrome
-1. Open Google Chrome and navigate to chrome://extensions/.
-2. Enable **Developer mode** toggle in the top-right corner.
-3. Click **Load unpacked** and select the generated /dist directory in this project folder.
-4. Pin the LeetCommit icon to your browser toolbar.
 
 ---
 
